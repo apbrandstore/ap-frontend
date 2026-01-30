@@ -6,9 +6,9 @@ import Link from 'next/link';
 export function Hero() {
   return (
     <section className="relative w-full bg-white overflow-hidden">
-      {/* Main Banner - Full Width */}
-      <div className="relative w-full h-[180px] md:h-[220px] lg:h-[820px] overflow-hidden bg-black">
-        {/* Hero image */}
+      {/* Main Banner - Full Width - extra top space on mobile so image isn't cut off */}
+      <div className="relative w-full h-[260px] min-h-[260px] md:h-[220px] lg:h-[820px] overflow-hidden bg-black">
+        {/* Hero image - object-top on mobile to keep top of image visible */}
         <Image
           src="/media/apb-hero.png"
           alt="AP Brand hero"
@@ -16,7 +16,7 @@ export function Hero() {
           priority
           quality={92}
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-top md:object-center"
         />
         
         {/* Shop Now Button - Center Bottom - Mobile Only */}
