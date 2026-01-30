@@ -7,6 +7,8 @@ import { ArrowRight } from 'lucide-react';
 import { Product, productApi, bestSellingApi, getImageUrl } from '@/lib/api';
 import { Hero } from '@/components/Hero';
 import { ProductCard } from '@/components/ProductCard';
+import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
+import { NewDropTrendingTileSkeleton } from '@/components/NewDropTrendingTileSkeleton';
 
 export default function Home() {
   const [newDropsFeatured, setNewDropsFeatured] = useState<Product | null>(null);
@@ -16,6 +18,7 @@ export default function Home() {
   const [mensProducts, setMensProducts] = useState<Product[]>([]);
   const [womensProducts, setWomensProducts] = useState<Product[]>([]);
   
+  const [tilesLoading, setTilesLoading] = useState(true);
   const [comboLoading, setComboLoading] = useState(true);
   const [coupleLoading, setCoupleLoading] = useState(true);
   const [mensLoading, setMensLoading] = useState(true);
@@ -29,6 +32,7 @@ export default function Home() {
   useEffect(() => {
     async function fetchHomepageTiles() {
       try {
+        setTilesLoading(true);
         const [products, bestSelling] = await Promise.all([
           productApi.getAll(),
           bestSellingApi.getAll(),
@@ -48,6 +52,8 @@ export default function Home() {
         setTrendingFeatured(bestSelling?.[0]?.product || null);
       } catch (err) {
         console.error(err);
+      } finally {
+        setTilesLoading(false);
       }
     }
     fetchHomepageTiles();
@@ -135,56 +141,66 @@ export default function Home() {
       {/* New Drops + Trending Tiles */}
       <section className="container mx-auto px-4 pt-8 pb-12">
         <div className="grid grid-cols-2 gap-3 md:gap-6">
-          <Link
-            href="/products?new_drops=true"
-            className="group block overflow-hidden"
-            aria-label="New Drops"
-          >
-            <div className="relative aspect-[5/4] bg-gray-100">
-              {getImageUrl(newDropsFeatured?.image ?? null) ? (
-                <Image
-                  src={getImageUrl(newDropsFeatured?.image ?? null)!}
-                  alt={newDropsFeatured?.name || 'New Drops'}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
-              )}
-            </div>
-            <div className="flex items-center justify-between px-3 py-3">
-              <span className="text-sm md:text-base font-medium text-black">
-                New Drops
-              </span>
-              <ArrowRight className="w-4 h-4 text-black transition-transform group-hover:translate-x-1" />
-            </div>
-          </Link>
+          {tilesLoading ? (
+            <>
+              <NewDropTrendingTileSkeleton />
+              <NewDropTrendingTileSkeleton />
+            </>
+          ) : (
+            <>
+              <Link
+                href="/products?new_drops=true"
+                className="group block overflow-hidden"
+                aria-label="New Drops"
+              >
+                <div className="relative aspect-[4/5] bg-gray-100">
+                  {getImageUrl(newDropsFeatured?.image ?? null) ? (
+                    <Image
+                      src={getImageUrl(newDropsFeatured?.image ?? null)!}
+                      alt={newDropsFeatured?.name || 'New Drops'}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
+                  )}
+                </div>
+                <div className="flex items-center justify-between pl-0 pr-2 py-3">
+                  <span className="text-sm md:text-base font-medium text-black">
+                    New Drops
+                  </span>
+                  <ArrowRight className="w-4 h-4 text-black transition-transform group-hover:translate-x-1 flex-shrink-0" />
+                </div>
+              </Link>
 
-          {showTrendingTile && (
-            <Link
-              href="/products?best_selling=true"
-              className="group block overflow-hidden"
-              aria-label="Trending Products"
-            >
-              <div className="relative aspect-[5/4] bg-gray-100">
-                <Image
-                  src={getImageUrl(trendingFeatured!.image)!}
-                  alt={trendingFeatured!.name || 'Trending Products'}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
-              <div className="flex items-center justify-between px-3 py-3">
-                <span className="text-sm md:text-base font-medium text-black">
-                  Trending Products
-                </span>
-                <ArrowRight className="w-4 h-4 text-black transition-transform group-hover:translate-x-1" />
-              </div>
-            </Link>
+              {showTrendingTile ? (
+                <Link
+                  href="/products?best_selling=true"
+                  className="group block overflow-hidden"
+                  aria-label="Trending Products"
+                >
+                  <div className="relative aspect-[4/5] bg-gray-100">
+                    <Image
+                      src={getImageUrl(trendingFeatured!.image)!}
+                      alt={trendingFeatured!.name || 'Trending Products'}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                  <div className="flex items-center justify-between pl-0 pr-2 py-3">
+                    <span className="text-sm md:text-base font-medium text-black">
+                      Trending Products
+                    </span>
+                    <ArrowRight className="w-4 h-4 text-black transition-transform group-hover:translate-x-1 flex-shrink-0" />
+                  </div>
+                </Link>
+              ) : (
+                <div className="opacity-0 pointer-events-none" aria-hidden="true" />
+              )}
+            </>
           )}
-          {!showTrendingTile && <div className="opacity-0 pointer-events-none" aria-hidden="true" />}
         </div>
       </section>
 
@@ -195,8 +211,10 @@ export default function Home() {
           <p className="text-sm text-gray-600">Special combo offers for you</p>
         </div>
         {comboLoading ? (
-          <div className="text-center py-16">
-            <div className="text-lg text-gray-600">Loading combo products...</div>
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         ) : comboError ? (
           <div className="text-center py-16">
@@ -234,8 +252,10 @@ export default function Home() {
           <p className="text-sm text-gray-600">Perfect matching outfits for couples</p>
         </div>
         {coupleLoading ? (
-          <div className="text-center py-16">
-            <div className="text-lg text-gray-600">Loading couple products...</div>
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         ) : coupleError ? (
           <div className="text-center py-16">
@@ -273,8 +293,10 @@ export default function Home() {
           <p className="text-sm text-gray-600">Premium men's apparel collection</p>
         </div>
         {mensLoading ? (
-          <div className="text-center py-16">
-            <div className="text-lg text-gray-600">Loading men's products...</div>
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         ) : mensError ? (
           <div className="text-center py-16">
@@ -312,8 +334,10 @@ export default function Home() {
           <p className="text-sm text-gray-600">Elegant women's fashion collection</p>
         </div>
         {womensLoading ? (
-          <div className="text-center py-16">
-            <div className="text-lg text-gray-600">Loading women's products...</div>
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         ) : womensError ? (
           <div className="text-center py-16">

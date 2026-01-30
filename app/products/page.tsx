@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Product, BestSelling, productApi, bestSellingApi } from '@/lib/api';
 import { ProductCard } from '@/components/ProductCard';
+import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
 
 function ProductsPageContent() {
   const searchParams = useSearchParams();
@@ -105,8 +106,10 @@ function ProductsPageContent() {
         </div>
 
         {loading ? (
-          <div className="text-center py-16">
-            <div className="text-lg text-gray-600">Loading products...</div>
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         ) : error ? (
           <div className="text-center py-16">
@@ -148,10 +151,16 @@ function ProductsPageContent() {
 export default function ProductsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         <div className="container mx-auto px-4 py-16">
-          <div className="text-center py-16">
-            <div className="text-lg text-gray-600">Loading products...</div>
+          <div className="text-center mb-12">
+            <div className="h-9 md:h-10 bg-gray-200 rounded w-48 md:w-64 mx-auto mb-4 animate-pulse" />
+            <div className="h-5 md:h-6 bg-gray-100 rounded w-72 md:w-96 mx-auto animate-pulse" />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
           </div>
         </div>
       </div>

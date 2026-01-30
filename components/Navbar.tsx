@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Menu, X, ChevronRight, ChevronDown, ShoppingBag, User, MessageCircle, Phone, Grid2X2, Plus, Minus } from 'lucide-react';
+import { Search, Menu, X, ChevronRight, ChevronDown, ShoppingBag, User, MessageCircle, Phone, Grid2X2, Plus, Minus, Mail } from 'lucide-react';
 import { notificationApi, categoryApi, Notification, Category } from '@/lib/api';
 import { SearchDropdown } from './SearchDropdown';
 
@@ -116,6 +116,26 @@ export function Navbar() {
 
   return (
     <nav className="bg-white sticky top-0 z-50 border-b border-gray-200 overflow-visible">
+      {/* Top info bar - Phone & Email (mobile + desktop) */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="container mx-auto px-4 py-2 flex items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500">
+          <a
+            href="tel:+8801862641734"
+            className="flex items-center gap-2 hover:text-black transition-colors"
+          >
+            <Phone className="w-4 h-4 flex-shrink-0" />
+            <span>+8801862641734</span>
+          </a>
+          <a
+            href="mailto:apbrandstore09@gmail.com"
+            className="flex items-center gap-2 hover:text-black transition-colors"
+          >
+            <Mail className="w-4 h-4 flex-shrink-0" />
+            <span>apbrandstore09@gmail.com</span>
+          </a>
+        </div>
+      </div>
+
       {/* Mobile Header - Hamburger, Logo, Search */}
       <div className="md:hidden relative overflow-visible">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3 relative">
