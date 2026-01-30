@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import { Product, productApi, bestSellingApi, getImageUrl } from '@/lib/api';
+import { Product, productApi, bestSellingApi, hotApi, getImageUrl } from '@/lib/api';
 import { Hero } from '@/components/Hero';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
@@ -13,29 +13,43 @@ import { NewDropTrendingTileSkeleton } from '@/components/NewDropTrendingTileSke
 export default function Home() {
   const [newDropsFeatured, setNewDropsFeatured] = useState<Product | null>(null);
   const [trendingFeatured, setTrendingFeatured] = useState<Product | null>(null);
+  const [hotProducts, setHotProducts] = useState<Product[]>([]);
   const [comboProducts, setComboProducts] = useState<Product[]>([]);
   const [coupleProducts, setCoupleProducts] = useState<Product[]>([]);
   const [mensProducts, setMensProducts] = useState<Product[]>([]);
   const [womensProducts, setWomensProducts] = useState<Product[]>([]);
   
   const [tilesLoading, setTilesLoading] = useState(true);
+  const [hotLoading, setHotLoading] = useState(true);
   const [comboLoading, setComboLoading] = useState(true);
   const [coupleLoading, setCoupleLoading] = useState(true);
   const [mensLoading, setMensLoading] = useState(true);
   const [womensLoading, setWomensLoading] = useState(true);
   
-  const [comboError, setComboError] = useState<string | null>(null);
-  const [coupleError, setCoupleError] = useState<string | null>(null);
-  const [mensError, setMensError] = useState<string | null>(null);
-  const [womensError, setWomensError] = useState<string | null>(null);
+  const [homeError, setHomeError] = useState<string | null>(null);
+
+  // Helper: product belongs to a category (slug) or its parent (for men/womens)
+  function productInCategory(p: Product, slug: string): boolean {
+    const s = (p.category_slug || p.category?.slug || '').toLowerCase();
+    const parent = (p.category?.parent_slug || '').toLowerCase();
+    return s === slug || parent === slug;
+  }
 
   useEffect(() => {
-    async function fetchHomepageTiles() {
+    async function fetchHomepageData() {
       try {
         setTilesLoading(true);
-        const [products, bestSelling] = await Promise.all([
+        setHotLoading(true);
+        setComboLoading(true);
+        setCoupleLoading(true);
+        setMensLoading(true);
+        setWomensLoading(true);
+        setHomeError(null);
+
+        const [products, bestSelling, hotList] = await Promise.all([
           productApi.getAll(),
           bestSellingApi.getAll(),
+          hotApi.getAll(),
         ]);
 
         // New drops featured: newest product within last 3 days
@@ -50,78 +64,32 @@ export default function Home() {
 
         // Trending featured: first best-selling item (if available)
         setTrendingFeatured(bestSelling?.[0]?.product || null);
+
+        // Hot section: products marked as hot (ordered)
+        setHotProducts((hotList || []).map((h) => h.product).filter(Boolean));
+
+        // Derive category sections from the same product list (no extra API calls)
+        setComboProducts(products.filter((p) => productInCategory(p, 'combo')));
+        setCoupleProducts(products.filter((p) => productInCategory(p, 'couple')));
+        setMensProducts(products.filter((p) => productInCategory(p, 'men')));
+        setWomensProducts(products.filter((p) => productInCategory(p, 'womens')));
       } catch (err) {
         console.error(err);
+        setHomeError('Failed to load products');
       } finally {
         setTilesLoading(false);
-      }
-    }
-    fetchHomepageTiles();
-  }, []);
-
-  useEffect(() => {
-    async function fetchComboProducts() {
-      try {
-        setComboLoading(true);
-        const data = await productApi.getAll(undefined, 'combo');
-        setComboProducts(data);
-      } catch (err) {
-        setComboError('Failed to load combo products');
-        console.error(err);
-      } finally {
+        setHotLoading(false);
         setComboLoading(false);
-      }
-    }
-    fetchComboProducts();
-  }, []);
-
-  useEffect(() => {
-    async function fetchCoupleProducts() {
-      try {
-        setCoupleLoading(true);
-        const data = await productApi.getAll(undefined, 'couple');
-        setCoupleProducts(data);
-      } catch (err) {
-        setCoupleError('Failed to load couple products');
-        console.error(err);
-      } finally {
         setCoupleLoading(false);
-      }
-    }
-    fetchCoupleProducts();
-  }, []);
-
-  useEffect(() => {
-    async function fetchMensProducts() {
-      try {
-        setMensLoading(true);
-        const data = await productApi.getAll(undefined, 'men');
-        setMensProducts(data);
-      } catch (err) {
-        setMensError('Failed to load men\'s products');
-        console.error(err);
-      } finally {
         setMensLoading(false);
-      }
-    }
-    fetchMensProducts();
-  }, []);
-
-  useEffect(() => {
-    async function fetchWomensProducts() {
-      try {
-        setWomensLoading(true);
-        const data = await productApi.getAll(undefined, 'womens');
-        setWomensProducts(data);
-      } catch (err) {
-        setWomensError('Failed to load women\'s products');
-        console.error(err);
-      } finally {
         setWomensLoading(false);
       }
     }
-    fetchWomensProducts();
+    fetchHomepageData();
   }, []);
+
+  // Hot section: show up to 4 products (4 on desktop, 2x2 on mobile)
+  const displayedHot = hotProducts.slice(0, 4);
 
   // Limit products for display (max 8 per section)
   const displayedCombo = comboProducts.slice(0, 8);
@@ -138,6 +106,34 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       <Hero />
+
+      {/* Hot Section - only show when there are hot products (4 on desktop, 2x2 on mobile) */}
+      {(hotLoading || displayedHot.length > 0) ? (
+        <section className="container mx-auto px-4 py-16">
+          <div className="mb-12 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-black" style={{ fontFamily: 'var(--font-space-grotesk), "Space Grotesk", sans-serif' }}>Hot</h2>
+            <p className="text-sm text-gray-600">Handpicked favorites for you</p>
+          </div>
+          {hotLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : homeError ? (
+            <div className="text-center py-16">
+              <div className="text-lg text-red-600">{homeError}</div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
+              {displayedHot.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+
       {/* New Drops + Trending Tiles */}
       <section className="container mx-auto px-4 pt-8 pb-12">
         <div className="grid grid-cols-2 gap-3 md:gap-6">
@@ -216,9 +212,9 @@ export default function Home() {
               <ProductCardSkeleton key={i} />
             ))}
           </div>
-        ) : comboError ? (
+        ) : homeError ? (
           <div className="text-center py-16">
-            <div className="text-lg text-red-600">{comboError}</div>
+            <div className="text-lg text-red-600">{homeError}</div>
           </div>
         ) : comboProducts.length === 0 ? (
           <div className="text-center py-16">
@@ -257,9 +253,9 @@ export default function Home() {
               <ProductCardSkeleton key={i} />
             ))}
           </div>
-        ) : coupleError ? (
+        ) : homeError ? (
           <div className="text-center py-16">
-            <div className="text-lg text-red-600">{coupleError}</div>
+            <div className="text-lg text-red-600">{homeError}</div>
           </div>
         ) : coupleProducts.length === 0 ? (
           <div className="text-center py-16">
@@ -298,9 +294,9 @@ export default function Home() {
               <ProductCardSkeleton key={i} />
             ))}
           </div>
-        ) : mensError ? (
+        ) : homeError ? (
           <div className="text-center py-16">
-            <div className="text-lg text-red-600">{mensError}</div>
+            <div className="text-lg text-red-600">{homeError}</div>
           </div>
         ) : mensProducts.length === 0 ? (
           <div className="text-center py-16">
@@ -339,9 +335,9 @@ export default function Home() {
               <ProductCardSkeleton key={i} />
             ))}
           </div>
-        ) : womensError ? (
+        ) : homeError ? (
           <div className="text-center py-16">
-            <div className="text-lg text-red-600">{womensError}</div>
+            <div className="text-lg text-red-600">{homeError}</div>
           </div>
         ) : womensProducts.length === 0 ? (
           <div className="text-center py-16">

@@ -48,6 +48,7 @@ export interface ProductCategory {
   slug: string;
   name: string;
   parent_name: string | null;
+  parent_slug: string | null;
 }
 
 export interface ProductColor {
@@ -80,6 +81,15 @@ export interface Product {
 }
 
 export interface BestSelling {
+  id: number;
+  product: Product;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Hot {
   id: number;
   product: Product;
   order: number;
@@ -139,6 +149,14 @@ export const categoryApi = {
 export const bestSellingApi = {
   getAll: async (): Promise<BestSelling[]> => {
     const response = await api.get('/api/best-selling/');
+    return response.data.results || response.data;
+  },
+};
+
+// API Functions - Hot products (homepage Hot section)
+export const hotApi = {
+  getAll: async (): Promise<Hot[]> => {
+    const response = await api.get('/api/hot/');
     return response.data.results || response.data;
   },
 };
