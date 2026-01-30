@@ -2,43 +2,55 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Product, BestSelling, productApi, bestSellingApi } from '@/lib/api';
+import Image from 'next/image';
+import { ArrowRight } from 'lucide-react';
+import { Product, productApi, bestSellingApi, getImageUrl } from '@/lib/api';
 import { Hero } from '@/components/Hero';
 import { ProductCard } from '@/components/ProductCard';
 
 export default function Home() {
-  const [bestSelling, setBestSelling] = useState<BestSelling[]>([]);
+  const [newDropsFeatured, setNewDropsFeatured] = useState<Product | null>(null);
+  const [trendingFeatured, setTrendingFeatured] = useState<Product | null>(null);
   const [comboProducts, setComboProducts] = useState<Product[]>([]);
   const [coupleProducts, setCoupleProducts] = useState<Product[]>([]);
   const [mensProducts, setMensProducts] = useState<Product[]>([]);
   const [womensProducts, setWomensProducts] = useState<Product[]>([]);
   
-  const [bestSellingLoading, setBestSellingLoading] = useState(true);
   const [comboLoading, setComboLoading] = useState(true);
   const [coupleLoading, setCoupleLoading] = useState(true);
   const [mensLoading, setMensLoading] = useState(true);
   const [womensLoading, setWomensLoading] = useState(true);
   
-  const [bestSellingError, setBestSellingError] = useState<string | null>(null);
   const [comboError, setComboError] = useState<string | null>(null);
   const [coupleError, setCoupleError] = useState<string | null>(null);
   const [mensError, setMensError] = useState<string | null>(null);
   const [womensError, setWomensError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchBestSelling() {
+    async function fetchHomepageTiles() {
       try {
-        setBestSellingLoading(true);
-        const data = await bestSellingApi.getAll();
-        setBestSelling(data);
+        const [products, bestSelling] = await Promise.all([
+          productApi.getAll(),
+          bestSellingApi.getAll(),
+        ]);
+
+        // New drops featured: newest product within last 3 days
+        const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
+        const newDrops = products
+          .filter((p) => {
+            const t = new Date(p.created_at).getTime();
+            return Number.isFinite(t) && t >= cutoff;
+          })
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setNewDropsFeatured(newDrops[0] || null);
+
+        // Trending featured: first best-selling item (if available)
+        setTrendingFeatured(bestSelling?.[0]?.product || null);
       } catch (err) {
-        setBestSellingError('Failed to load best selling products');
         console.error(err);
-      } finally {
-        setBestSellingLoading(false);
       }
     }
-    fetchBestSelling();
+    fetchHomepageTiles();
   }, []);
 
   useEffect(() => {
@@ -105,62 +117,75 @@ export default function Home() {
     fetchWomensProducts();
   }, []);
 
-  // Extract products from best selling items
-  const bestSellingProducts = bestSelling.map(item => item.product);
-  
   // Limit products for display (max 8 per section)
-  const displayedBestSelling = bestSellingProducts.slice(0, 8);
   const displayedCombo = comboProducts.slice(0, 8);
   const displayedCouple = coupleProducts.slice(0, 8);
   const displayedMens = mensProducts.slice(0, 8);
   const displayedWomens = womensProducts.slice(0, 8);
   
-  const hasMoreBestSelling = bestSellingProducts.length > 8;
   const hasMoreCombo = comboProducts.length > 8;
   const hasMoreCouple = coupleProducts.length > 8;
   const hasMoreMens = mensProducts.length > 8;
   const hasMoreWomens = womensProducts.length > 8;
+  const showTrendingTile = Boolean(trendingFeatured);
 
   return (
     <div className="min-h-screen bg-white">
       <Hero />
-      {/* Trending Products Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="mb-12 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2 text-black" style={{ fontFamily: 'var(--font-space-grotesk), "Space Grotesk", sans-serif' }}>Trending Products</h2>
-          <p className="text-sm text-gray-600">Discover our most popular items</p>
-        </div>
-        {bestSellingLoading ? (
-          <div className="text-center py-16">
-            <div className="text-lg text-gray-600">Loading best selling products...</div>
-          </div>
-        ) : bestSellingError ? (
-          <div className="text-center py-16">
-            <div className="text-lg text-red-600">{bestSellingError}</div>
-          </div>
-        ) : bestSellingProducts.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-lg text-gray-600">No best selling products available</div>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-6">
-              {displayedBestSelling.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+      {/* New Drops + Trending Tiles */}
+      <section className="container mx-auto px-4 pt-8 pb-12">
+        <div className="grid grid-cols-2 gap-3 md:gap-6">
+          <Link
+            href="/products?new_drops=true"
+            className="group block overflow-hidden"
+            aria-label="New Drops"
+          >
+            <div className="relative aspect-[5/4] bg-gray-100">
+              {getImageUrl(newDropsFeatured?.image ?? null) ? (
+                <Image
+                  src={getImageUrl(newDropsFeatured?.image ?? null)!}
+                  alt={newDropsFeatured?.name || 'New Drops'}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300" />
+              )}
             </div>
-            {hasMoreBestSelling && (
-              <div className="text-center mt-6 md:mt-8">
-                <Link
-                  href="/products?best_selling=true"
-                  className="inline-block px-6 md:px-8 py-2 md:py-3 border-2 border-black text-black hover:bg-black hover:text-white transition-colors rounded font-medium text-sm md:text-base"
-                >
-                  View More
-                </Link>
+            <div className="flex items-center justify-between px-3 py-3">
+              <span className="text-sm md:text-base font-medium text-black">
+                New Drops
+              </span>
+              <ArrowRight className="w-4 h-4 text-black transition-transform group-hover:translate-x-1" />
+            </div>
+          </Link>
+
+          {showTrendingTile && (
+            <Link
+              href="/products?best_selling=true"
+              className="group block overflow-hidden"
+              aria-label="Trending Products"
+            >
+              <div className="relative aspect-[5/4] bg-gray-100">
+                <Image
+                  src={getImageUrl(trendingFeatured!.image)!}
+                  alt={trendingFeatured!.name || 'Trending Products'}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
               </div>
-            )}
-          </>
-        )}
+              <div className="flex items-center justify-between px-3 py-3">
+                <span className="text-sm md:text-base font-medium text-black">
+                  Trending Products
+                </span>
+                <ArrowRight className="w-4 h-4 text-black transition-transform group-hover:translate-x-1" />
+              </div>
+            </Link>
+          )}
+          {!showTrendingTile && <div className="opacity-0 pointer-events-none" aria-hidden="true" />}
+        </div>
       </section>
 
       {/* Combo Section */}

@@ -98,7 +98,7 @@ export function ProductCard({ product }: ProductCardProps) {
           className={`w-full py-1.5 px-2 md:py-2 md:px-4 rounded border-2 border-black text-xs md:text-sm font-medium transition-colors block text-center mt-auto ${
             isOutOfStock
               ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed pointer-events-none'
-              : 'bg-white text-black hover:bg-black hover:text-white'
+              : 'bg-black text-white hover:bg-gray-800'
           }`}
           onClick={(e) => {
             if (isOutOfStock) {

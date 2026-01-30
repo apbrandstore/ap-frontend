@@ -12,6 +12,8 @@ function ProductsPageContent() {
   const search = searchParams.get('search');
   const bestSellingParam = searchParams.get('best_selling');
   const isBestSelling = bestSellingParam === 'true';
+  const newDropsParam = searchParams.get('new_drops');
+  const isNewDrops = newDropsParam === 'true';
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,18 @@ function ProductsPageContent() {
         } else {
           // Fetch regular products with optional category filter and search
           const data = await productApi.getAll(search || undefined, category || undefined);
-          setProducts(data);
+          if (isNewDrops) {
+            const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
+            const filtered = data
+              .filter((p) => {
+                const t = new Date(p.created_at).getTime();
+                return Number.isFinite(t) && t >= cutoff;
+              })
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            setProducts(filtered);
+          } else {
+            setProducts(data);
+          }
         }
       } catch (err) {
         setError('Failed to load products');
@@ -38,10 +51,11 @@ function ProductsPageContent() {
       }
     }
     fetchProducts();
-  }, [category, search, isBestSelling]);
+  }, [category, search, isBestSelling, isNewDrops]);
 
   const getCategoryTitle = () => {
-    if (isBestSelling) return 'Best Selling Products';
+    if (isNewDrops) return 'New Drops';
+    if (isBestSelling) return 'Trending Products';
     if (search) return `Search Results for "${search}"`;
     if (!category) return 'All Products';
     const normalizedCategory = category.toLowerCase().trim();
@@ -58,7 +72,8 @@ function ProductsPageContent() {
   };
 
   const getCategoryDescription = () => {
-    if (isBestSelling) return 'Discover Our Most Popular Premium T-Shirts';
+    if (isNewDrops) return 'Newly Droped Prodcuts Just For You!';
+    if (isBestSelling) return 'Discover Our Most Popular Items';
     if (!category) return 'Explore Our Complete Collection of Premium Apparel';
     
     const normalizedCategory = category.toLowerCase().trim();

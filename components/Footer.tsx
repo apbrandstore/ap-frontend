@@ -15,19 +15,6 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Logo & Contact Info */}
           <div>
-            <div className="flex items-center gap-2 mb-6">
-              <Image
-                src="/media/apbrandstore.jpg"
-                alt="AP Brand Store Logo"
-                width={144}
-                height={144}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-              <div className="flex flex-col">
-                <span className="text-xl font-extrabold text-red-600 leading-tight" style={{ fontFamily: 'var(--font-funnel-sans)' }}>AP Brand</span>
-                <span className="text-xl font-extrabold text-black leading-tight" style={{ fontFamily: 'var(--font-funnel-sans)' }}>Store</span>
-              </div>
-            </div>
             <div className="space-y-3 text-sm text-black">
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
@@ -40,14 +27,14 @@ export function Footer() {
                 <Mail className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold">EMAIL:</span>
-                  <p className="mt-1">apbrandstore@gmail.com</p>
+                  <p className="mt-1">apbrandstore09@gmail.com</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <Phone className="w-5 h-5 text-gray-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold">PHONE:</span>
-                  <p className="mt-1">+8801604112279</p>
+                  <p className="mt-1">+8801862641734</p>
                 </div>
               </div>
             </div>
@@ -99,7 +86,7 @@ export function Footer() {
             <h3 className="text-lg font-bold uppercase mb-4 text-black">SOCIAL LINKS</h3>
             <div className="flex items-center gap-4">
               <Link
-                href="https://www.facebook.com/apbrandstore"
+                href="#"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
@@ -113,7 +100,7 @@ export function Footer() {
                 />
               </Link>
               <Link
-                href="https://www.tiktok.com/@apbrandstore"
+                href="#"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
