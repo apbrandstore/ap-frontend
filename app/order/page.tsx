@@ -838,67 +838,43 @@ function OrderPageContent() {
                 })}
               </div>
 
-              {/* Add Another Product Button */}
+              {/* Delivery Area - moved from Order Form */}
               <div className="mb-4">
-                <button
-                  type="button"
-                  onClick={() => setShowProductSelector(!showProductSelector)}
-                  className="w-full py-2 px-4 border-2 border-dashed border-gray-300 rounded hover:border-black hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-black"
-                >
-                  <Plus className="w-4 h-4" />
-                  আরেকটি পণ্য যোগ করুন
-                </button>
-              </div>
-
-              {/* Product Selector */}
-              {showProductSelector && (
-                <div className="mb-4 border-2 border-gray-200 rounded p-4 max-h-64 overflow-y-auto">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-black">পণ্য নির্বাচন করুন</h3>
-                    <button
-                      type="button"
-                      onClick={() => setShowProductSelector(false)}
-                      className="text-gray-500 hover:text-black"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {loadingProducts ? (
-                    <div className="text-center py-4 text-sm text-gray-600">লোড হচ্ছে...</div>
-                  ) : availableProducts.length === 0 ? (
-                    <div className="text-center py-4 text-sm text-gray-600">কোন পণ্য পাওয়া যায়নি</div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      {availableProducts.map((product) => (
-                        <button
-                          key={product.id}
-                          type="button"
-                          onClick={() => handleAddProduct(product)}
-                          className="text-left p-2 border border-gray-200 rounded hover:border-black hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="relative w-full aspect-square mb-2 rounded overflow-hidden bg-gray-100">
-                            {getImageUrl(product.image) ? (
-                              <Image
-                                src={getImageUrl(product.image)!}
-                                alt={product.name}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">No Image</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="font-medium text-xs text-black line-clamp-2 leading-tight mb-1">{product.name}</div>
-                          <div className="text-xs text-gray-600 font-semibold">৳{parseFloat(product.current_price).toFixed(0)}.00</div>
-                        </button>
-                      ))}
+                <label className="block text-sm font-medium text-black mb-2">
+                  ডেলিভারি এলাকা <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="district"
+                        value="inside_dhaka"
+                        checked={formData.district === 'inside_dhaka'}
+                        onChange={handleInputChange}
+                        required
+                        className="w-4 h-4 text-black border-2 border-gray-300 focus:outline-none cursor-pointer"
+                      />
+                      <span className="ml-3 text-black">ঢাকা সিটির ভেতরে</span>
                     </div>
-                  )}
+                    <span className="text-black font-semibold">৳80</span>
+                  </label>
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="district"
+                        value="outside_dhaka"
+                        checked={formData.district === 'outside_dhaka'}
+                        onChange={handleInputChange}
+                        className="w-4 h-4 text-black border-2 border-gray-300 focus:outline-none cursor-pointer"
+                      />
+                      <span className="ml-3 text-black">ঢাকা সিটির বাহিরে</span>
+                    </div>
+                    <span className="text-black font-semibold">৳150</span>
+                  </label>
                 </div>
-              )}
+              </div>
 
               {/* Price Summary - Always visible and updates immediately */}
               <div className="border-t border-gray-200 pt-3 mt-3">
@@ -970,43 +946,6 @@ function OrderPageContent() {
                     className="w-full px-4 py-2 border-2 border-gray-300 rounded focus:outline-none focus:border-black resize-none"
                     placeholder="আপনার ঠিকানা"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-black mb-2">
-                    ডেলিভারি এলাকা <span className="text-red-500">*</span>
-                  </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          name="district"
-                          value="inside_dhaka"
-                          checked={formData.district === 'inside_dhaka'}
-                          onChange={handleInputChange}
-                          required
-                          className="w-4 h-4 text-black border-2 border-gray-300 focus:outline-none cursor-pointer"
-                        />
-                        <span className="ml-3 text-black">ঢাকা সিটির ভেতরে</span>
-                      </div>
-                      <span className="text-black font-semibold">৳80</span>
-                    </label>
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          name="district"
-                          value="outside_dhaka"
-                          checked={formData.district === 'outside_dhaka'}
-                          onChange={handleInputChange}
-                          className="w-4 h-4 text-black border-2 border-gray-300 focus:outline-none cursor-pointer"
-                        />
-                        <span className="ml-3 text-black">ঢাকা সিটির বাহিরে</span>
-                      </div>
-                      <span className="text-black font-semibold">৳150</span>
-                    </label>
-                  </div>
                 </div>
 
                 {error && (
