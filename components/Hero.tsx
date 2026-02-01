@@ -1,22 +1,35 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { siteSettingsApi, getImageUrl } from '@/lib/api';
+
+const DEFAULT_HERO_SRC = '/media/apb-hero.png';
 
 export function Hero() {
+  const [heroSrc, setHeroSrc] = useState<string>(DEFAULT_HERO_SRC);
+
+  useEffect(() => {
+    siteSettingsApi.get().then((settings) => {
+      const url = settings.hero_image ? getImageUrl(settings.hero_image) : null;
+      if (url) setHeroSrc(url);
+    }).catch(() => {});
+  }, []);
+
   return (
     <section className="relative w-full bg-white overflow-hidden">
-      {/* Main Banner - Full Width - extra top space on mobile so image isn't cut off */}
-      <div className="relative w-full h-[260px] min-h-[260px] md:h-[220px] lg:h-[820px] overflow-hidden bg-black">
-        {/* Hero image - object-top on mobile to keep top of image visible */}
+      {/* Main Banner - full image visible, no cropping; container matches typical hero aspect */}
+      <div className="relative w-full min-h-[200px] aspect-[16/9] md:aspect-[21/9] lg:aspect-[3/1]">
+        {/* Hero image - fully visible, no crop; any letterboxing is white (section bg) */}
         <Image
-          src="/media/apb-hero.png"
+          src={heroSrc}
           alt="AP Brand hero"
           fill
           priority
           quality={92}
           sizes="100vw"
-          className="object-cover object-top md:object-center"
+          className="object-contain"
         />
         
         {/* Shop Now Button - Center Bottom - Mobile Only */}

@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
         port: '8000',
         pathname: '/media/**',
       },
+      // CDN for media (hero image etc.) in production
+      {
+        protocol: 'https',
+        hostname: 'cdn.apbrandstorebd.com',
+        pathname: '/**',
+      },
     ],
     unoptimized: false, // Set to true if you want to disable image optimization
   },

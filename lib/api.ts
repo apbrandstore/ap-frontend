@@ -211,6 +211,20 @@ export const trackingCodeApi = {
   },
 };
 
+// Types - Site Settings (hero image etc.)
+export interface SiteSettings {
+  hero_image: string | null;
+  updated_at: string;
+}
+
+// API Functions - Site Settings
+export const siteSettingsApi = {
+  get: async (): Promise<SiteSettings> => {
+    const response = await api.get<SiteSettings>('/api/site-settings/');
+    return response.data;
+  },
+};
+
 // Order types
 export interface CreateOrderData {
   customer_name: string;
