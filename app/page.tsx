@@ -4,11 +4,46 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import { Product, productApi, bestSellingApi, hotApi, getImageUrl } from '@/lib/api';
+import { Product, homepageApi, getImageUrl, type HomepageData } from '@/lib/api';
 import { Hero } from '@/components/Hero';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductCardSkeleton } from '@/components/ProductCardSkeleton';
 import { NewDropTrendingTileSkeleton } from '@/components/NewDropTrendingTileSkeleton';
+
+// Cache for instant load when navigating back to homepage (stale-while-revalidate)
+const HOMEPAGE_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+let homepageCache: HomepageData | null = null;
+let homepageCacheTime = 0;
+
+function applyHomepageData(
+  data: HomepageData,
+  productInCategory: (p: Product, slug: string) => boolean,
+  setters: {
+    setNewDropsFeatured: (v: Product | null) => void;
+    setTrendingFeatured: (v: Product | null) => void;
+    setHotProducts: (v: Product[]) => void;
+    setComboProducts: (v: Product[]) => void;
+    setCoupleProducts: (v: Product[]) => void;
+    setMensProducts: (v: Product[]) => void;
+    setWomensProducts: (v: Product[]) => void;
+  }
+) {
+  const { products, best_selling, hot } = data;
+  const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
+  const newDrops = products
+    .filter((p) => {
+      const t = new Date(p.created_at).getTime();
+      return Number.isFinite(t) && t >= cutoff;
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  setters.setNewDropsFeatured(newDrops[0] || null);
+  setters.setTrendingFeatured(best_selling?.[0]?.product ?? null);
+  setters.setHotProducts((hot || []).map((h) => h.product).filter(Boolean));
+  setters.setComboProducts(products.filter((p) => productInCategory(p, 'combo')));
+  setters.setCoupleProducts(products.filter((p) => productInCategory(p, 'couple')));
+  setters.setMensProducts(products.filter((p) => productInCategory(p, 'men')));
+  setters.setWomensProducts(products.filter((p) => productInCategory(p, 'womens')));
+}
 
 export default function Home() {
   const [newDropsFeatured, setNewDropsFeatured] = useState<Product | null>(null);
@@ -27,6 +62,7 @@ export default function Home() {
   const [womensLoading, setWomensLoading] = useState(true);
   
   const [homeError, setHomeError] = useState<string | null>(null);
+  const [hotExpanded, setHotExpanded] = useState(false);
 
   // Helper: product belongs to a category (slug) or its parent (for men/womens)
   function productInCategory(p: Product, slug: string): boolean {
@@ -36,60 +72,70 @@ export default function Home() {
   }
 
   useEffect(() => {
+    const setters = {
+      setNewDropsFeatured,
+      setTrendingFeatured,
+      setHotProducts,
+      setComboProducts,
+      setCoupleProducts,
+      setMensProducts,
+      setWomensProducts,
+    };
+    const hasValidCache =
+      homepageCache &&
+      Date.now() - homepageCacheTime < HOMEPAGE_CACHE_TTL_MS;
+
+    if (hasValidCache && homepageCache) {
+      applyHomepageData(homepageCache, productInCategory, setters);
+      setTilesLoading(false);
+      setHotLoading(false);
+      setComboLoading(false);
+      setCoupleLoading(false);
+      setMensLoading(false);
+      setWomensLoading(false);
+    } else {
+      setTilesLoading(true);
+      setHotLoading(true);
+      setComboLoading(true);
+      setCoupleLoading(true);
+      setMensLoading(true);
+      setWomensLoading(true);
+    }
+    setHomeError(null);
+
+    let cancelled = false;
     async function fetchHomepageData() {
       try {
-        setTilesLoading(true);
-        setHotLoading(true);
-        setComboLoading(true);
-        setCoupleLoading(true);
-        setMensLoading(true);
-        setWomensLoading(true);
-        setHomeError(null);
-
-        const [products, bestSelling, hotList] = await Promise.all([
-          productApi.getAll(),
-          bestSellingApi.getAll(),
-          hotApi.getAll(),
-        ]);
-
-        // New drops featured: newest product within last 3 days
-        const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
-        const newDrops = products
-          .filter((p) => {
-            const t = new Date(p.created_at).getTime();
-            return Number.isFinite(t) && t >= cutoff;
-          })
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        setNewDropsFeatured(newDrops[0] || null);
-
-        // Trending featured: first best-selling item (if available)
-        setTrendingFeatured(bestSelling?.[0]?.product || null);
-
-        // Hot section: products marked as hot (ordered)
-        setHotProducts((hotList || []).map((h) => h.product).filter(Boolean));
-
-        // Derive category sections from the same product list (no extra API calls)
-        setComboProducts(products.filter((p) => productInCategory(p, 'combo')));
-        setCoupleProducts(products.filter((p) => productInCategory(p, 'couple')));
-        setMensProducts(products.filter((p) => productInCategory(p, 'men')));
-        setWomensProducts(products.filter((p) => productInCategory(p, 'womens')));
+        const data = await homepageApi.getData();
+        if (cancelled) return;
+        homepageCache = data;
+        homepageCacheTime = Date.now();
+        applyHomepageData(data, productInCategory, setters);
       } catch (err) {
-        console.error(err);
-        setHomeError('Failed to load products');
+        if (!cancelled) {
+          console.error(err);
+          setHomeError('Failed to load products');
+        }
       } finally {
-        setTilesLoading(false);
-        setHotLoading(false);
-        setComboLoading(false);
-        setCoupleLoading(false);
-        setMensLoading(false);
-        setWomensLoading(false);
+        if (!cancelled) {
+          setTilesLoading(false);
+          setHotLoading(false);
+          setComboLoading(false);
+          setCoupleLoading(false);
+          setMensLoading(false);
+          setWomensLoading(false);
+        }
       }
     }
     fetchHomepageData();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Hot section: show up to 4 products (4 on desktop, 2x2 on mobile)
-  const displayedHot = hotProducts.slice(0, 4);
+  // Hot section: show 4 by default, expand to show all via "View more"
+  const displayedHot = hotExpanded ? hotProducts : hotProducts.slice(0, 4);
+  const hasMoreHot = hotProducts.length > 4;
 
   // Limit products for display (max 8 per section)
   const displayedCombo = comboProducts.slice(0, 8);
@@ -125,11 +171,24 @@ export default function Home() {
               <div className="text-lg text-red-600">{homeError}</div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
-              {displayedHot.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
+                {displayedHot.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              {hasMoreHot && (
+                <div className="text-center mt-6 md:mt-8">
+                  <button
+                    type="button"
+                    onClick={() => setHotExpanded((prev) => !prev)}
+                    className="inline-block px-6 md:px-8 py-2 md:py-3 border-2 border-black text-black hover:bg-black hover:text-white transition-colors rounded font-medium text-sm md:text-base"
+                  >
+                    {hotExpanded ? 'View less' : 'View more'}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </section>
       ) : null}

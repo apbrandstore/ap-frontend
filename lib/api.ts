@@ -161,6 +161,20 @@ export const hotApi = {
   },
 };
 
+// Homepage: single request for products + best_selling + hot (faster than 3 parallel calls)
+export interface HomepageData {
+  products: Product[];
+  best_selling: BestSelling[];
+  hot: Hot[];
+}
+
+export const homepageApi = {
+  getData: async (): Promise<HomepageData> => {
+    const response = await api.get<HomepageData>('/api/homepage/');
+    return response.data;
+  },
+};
+
 // API Functions - Notifications
 export const notificationApi = {
   getActive: async (): Promise<Notification | null> => {
