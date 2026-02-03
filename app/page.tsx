@@ -157,7 +157,7 @@ export default function Home() {
       {(hotLoading || displayedHot.length > 0) ? (
         <section className="container mx-auto px-4 py-16">
           <div className="mb-12 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-black" style={{ fontFamily: 'var(--font-space-grotesk), "Space Grotesk", sans-serif' }}>Hot</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-black" style={{ fontFamily: 'var(--font-space-grotesk), "Space Grotesk", sans-serif' }}>Special Offers</h2>
             <p className="text-sm text-gray-600">Handpicked favorites for you</p>
           </div>
           {hotLoading ? (

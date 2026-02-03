@@ -456,13 +456,6 @@ export function Navbar() {
               <span>Customer Reviews</span>
               <ChevronRight className="w-5 h-5" />
             </Link>
-            <button
-              onClick={openTrackingModal}
-              className="flex items-center justify-between text-base font-medium text-black hover:underline py-2 w-full text-left"
-            >
-              <span>Track Your Parcel</span>
-              <ChevronRight className="w-5 h-5" />
-            </button>
           </div>
         </div>
       </div>
