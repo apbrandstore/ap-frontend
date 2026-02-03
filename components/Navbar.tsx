@@ -422,7 +422,7 @@ export function Navbar() {
 
             {/* Chat Link */}
             <a
-              href="https://wa.me/8801604112279"
+              href="https://wa.me/8801862641734"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between text-base font-medium text-black hover:underline py-2"
@@ -437,7 +437,7 @@ export function Navbar() {
 
             {/* Call Link */}
             <a
-              href="tel:+8801604112279"
+              href="tel:+8801862641734"
               className="flex items-center justify-between text-base font-medium text-black hover:underline py-2"
               onClick={closeMobileMenu}
             >
