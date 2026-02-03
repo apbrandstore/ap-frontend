@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Menu, X, ChevronRight, ChevronDown, ShoppingBag, User, MessageCircle, Phone, Grid2X2, Plus, Minus, Mail } from 'lucide-react';
+import { Search, X, ChevronRight, ChevronDown, ShoppingBag, User, MessageCircle, Phone, Grid2X2, Plus, Minus, Mail, Heart, Home } from 'lucide-react';
 import { notificationApi, categoryApi, Notification, Category } from '@/lib/api';
 import { SearchDropdown } from './SearchDropdown';
 
@@ -16,10 +16,9 @@ const placeholders = [
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [notification, setNotification] = useState<Notification | null>(null);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -57,19 +56,6 @@ export function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-    setIsCategoriesOpen(false);
-  };
-
-  const toggleCategories = () => {
-    setIsCategoriesOpen(!isCategoriesOpen);
-  };
-
   const toggleCategoryExpansion = (category: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -81,7 +67,6 @@ export function Navbar() {
 
   const openTrackingModal = () => {
     setIsTrackingModalOpen(true);
-    setIsMobileMenuOpen(false);
   };
 
   const closeTrackingModal = () => {
@@ -95,6 +80,14 @@ export function Navbar() {
 
   const closeSearchModal = () => {
     setIsSearchModalOpen(false);
+  };
+
+  const toggleMobileCategories = () => {
+    setIsMobileCategoriesOpen((prev) => !prev);
+  };
+
+  const closeMobileCategories = () => {
+    setIsMobileCategoriesOpen(false);
   };
 
   const handleTrackOrder = (e: React.FormEvent) => {
@@ -136,17 +129,11 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Header - Hamburger, Logo, Search */}
+      {/* Mobile Header - Logo, Search (no hamburger; nav moved to bottom bar) */}
       <div className="md:hidden relative overflow-visible">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3 relative">
-          {/* Left: Hamburger Menu */}
-          <button
-            onClick={toggleMobileMenu}
-            className="p-2 flex-shrink-0 z-10"
-            aria-label="Open menu"
-          >
-            <Menu className="w-6 h-6 text-black" />
-          </button>
+          {/* Left: Spacer for balance */}
+          <div className="w-10 h-10 flex-shrink-0" aria-hidden />
 
           {/* Center: Logo - Bigger size with absolute positioning to allow overflow */}
           <Link 
@@ -171,6 +158,144 @@ export function Navbar() {
             <Search className="w-6 h-6 text-black" />
           </button>
         </div>
+      </div>
+
+      {/* Mobile Categories Panel - slides up from bottom (same tree as desktop) */}
+      {isMobileCategoriesOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-[60] md:hidden"
+            onClick={closeMobileCategories}
+            aria-hidden
+          />
+          <div
+            className="fixed left-0 right-0 bottom-0 z-[70] md:hidden bg-white rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col pb-[env(safe-area-inset-bottom,0)]"
+            role="dialog"
+            aria-label="Categories"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
+              <h2 className="text-lg font-semibold text-black">Categories</h2>
+              <button
+                onClick={closeMobileCategories}
+                className="p-2 -m-2 text-gray-500 hover:text-black"
+                aria-label="Close categories"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 py-2">
+              <Link
+                href="/products"
+                className="block px-4 py-3 text-sm font-medium text-black hover:bg-gray-100"
+                onClick={closeMobileCategories}
+              >
+                All Products
+              </Link>
+              {categories.map((category) => (
+                <div key={category.id} className="border-t border-gray-100">
+                  {category.children.length > 0 ? (
+                    <>
+                      <div className="flex items-center justify-between px-4 py-3 text-sm group">
+                        <Link
+                          href={`/products?category=${category.slug}`}
+                          className="flex-1 font-medium text-black hover:underline"
+                          onClick={closeMobileCategories}
+                        >
+                          {category.name}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={(e) => toggleCategoryExpansion(category.slug, e)}
+                          className="p-2 -m-2 text-gray-500 hover:bg-gray-100 rounded"
+                          aria-expanded={expandedCategories[category.slug]}
+                          aria-label={expandedCategories[category.slug] ? `Collapse ${category.name}` : `Expand ${category.name}`}
+                        >
+                          {expandedCategories[category.slug] ? (
+                            <ChevronDown className="w-5 h-5" />
+                          ) : (
+                            <ChevronRight className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                      {expandedCategories[category.slug] && (
+                        <div className="bg-gray-50 pl-4 pr-2 py-2 space-y-0.5">
+                          {category.children.map((child) => (
+                            <Link
+                              key={child.id}
+                              href={`/products?category=${child.slug}`}
+                              className="block py-2.5 px-2 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded"
+                              onClick={closeMobileCategories}
+                            >
+                              {child.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Link
+                      href={`/products?category=${category.slug}`}
+                      className="block px-4 py-3 text-sm font-medium text-black hover:bg-gray-100"
+                      onClick={closeMobileCategories}
+                    >
+                      {category.name}
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Mobile Bottom Navigation Bar - white bg, black icons */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white text-black border-t border-gray-200 pb-[env(safe-area-inset-bottom,0)]">
+        <nav className="flex items-center justify-around py-2 px-2" aria-label="Mobile navigation">
+          <button
+            type="button"
+            onClick={toggleMobileCategories}
+            className={`flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0 flex-1 transition-colors ${isMobileCategoriesOpen || pathname.startsWith('/products') ? 'text-black' : 'text-black/80 hover:text-black'}`}
+            aria-label="Category"
+            aria-expanded={isMobileCategoriesOpen}
+          >
+            <Grid2X2 className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
+            <span className="text-[10px] font-medium uppercase tracking-wide">Category</span>
+          </button>
+          <Link
+            href="/wishlist"
+            className={`flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0 flex-1 transition-colors ${pathname === '/wishlist' ? 'text-black' : 'text-black/80 hover:text-black'}`}
+            aria-label="Wishlist"
+          >
+            <Heart className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
+            <span className="text-[10px] font-medium uppercase tracking-wide">Wishlist</span>
+          </Link>
+          <Link
+            href="/"
+            className={`flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0 flex-1 transition-colors ${pathname === '/' ? 'text-black' : 'text-black/80 hover:text-black'}`}
+            aria-label="Home"
+          >
+            <Home className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
+            <span className="text-[10px] font-medium uppercase tracking-wide">Home</span>
+          </Link>
+          <a
+            href="https://wa.me/8801862641734"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0 flex-1 text-black/80 hover:text-black transition-colors"
+            aria-label="Chat"
+          >
+            <MessageCircle className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
+            <span className="text-[10px] font-medium uppercase tracking-wide">Chat</span>
+          </a>
+          <a
+            href="tel:+8801862641734"
+            className="flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0 flex-1 text-black/80 hover:text-black transition-colors"
+            aria-label="Call"
+          >
+            <Phone className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
+            <span className="text-[10px] font-medium uppercase tracking-wide">Call</span>
+          </a>
+        </nav>
       </div>
 
       {/* Desktop Top Bar with Search Icon, Logo, and Icons */}
@@ -304,161 +429,6 @@ export function Navbar() {
           </div>
         </div>
       )}
-
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-          onClick={closeMobileMenu}
-        />
-      )}
-
-      {/* Mobile Navigation Menu */}
-      <div
-        className={`fixed top-0 left-0 h-full w-full bg-white z-50 transform transition-transform duration-300 ease-in-out md:hidden ${
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Mobile Menu Header */}
-          <div className="flex items-center justify-end p-4 border-b border-gray-200">
-            <button
-              onClick={closeMobileMenu}
-              className="w-6 h-6 flex items-center justify-center"
-              aria-label="Close menu"
-            >
-              <X className="w-6 h-6 text-black" />
-            </button>
-          </div>
-
-          {/* Mobile Menu Links */}
-          <div className="flex flex-col p-4 space-y-2">
-            <Link
-              href="/"
-              className="flex items-center justify-between text-base font-medium text-black hover:underline py-2"
-              onClick={closeMobileMenu}
-            >
-              <span>Home</span>
-              <ChevronRight className="w-5 h-5" />
-            </Link>
-            
-            {/* Category Section */}
-            <div>
-              <div className="flex items-center justify-between text-base font-medium text-black py-2">
-                <div className="flex items-center gap-2">
-                  <Grid2X2 className="w-5 h-5" />
-                  <button
-                    onClick={toggleCategories}
-                    className="text-left"
-                  >
-                    Category
-                  </button>
-                </div>
-                <ChevronRight className="w-5 h-5" />
-              </div>
-              {/* Mobile Categories Dropdown */}
-              {isCategoriesOpen && (
-                <div className="pl-4 mt-2 space-y-2">
-                  <Link
-                    href="/products"
-                    className="block text-sm text-gray-700 hover:text-black py-2"
-                    onClick={closeMobileMenu}
-                  >
-                    All Products
-                  </Link>
-                  {categories.map((category) => (
-                    <div key={category.id}>
-                      {category.children.length > 0 ? (
-                        <>
-                          <div className="flex items-center justify-between text-sm py-2">
-                            <Link
-                              href={`/products?category=${category.slug}`}
-                              className="flex-1 text-gray-700 hover:text-black"
-                              onClick={closeMobileMenu}
-                            >
-                              {category.name}
-                            </Link>
-                            <button
-                              onClick={(e) => toggleCategoryExpansion(category.slug, e)}
-                              className="p-1"
-                              aria-label={expandedCategories[category.slug] ? `Collapse ${category.name}` : `Expand ${category.name}`}
-                            >
-                              {expandedCategories[category.slug] ? (
-                                <Minus className="w-4 h-4" />
-                              ) : (
-                                <Plus className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
-                          {expandedCategories[category.slug] && (
-                            <div className="pl-4 space-y-2">
-                              {category.children.map((child) => (
-                                <Link
-                                  key={child.id}
-                                  href={`/products?category=${child.slug}`}
-                                  className="block text-sm text-gray-600 hover:text-black py-2"
-                                  onClick={closeMobileMenu}
-                                >
-                                  {child.name}
-                                </Link>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <Link
-                          href={`/products?category=${category.slug}`}
-                          className="block text-sm text-gray-700 hover:text-black py-2"
-                          onClick={closeMobileMenu}
-                        >
-                          {category.name}
-                        </Link>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Chat Link */}
-            <a
-              href="https://wa.me/8801862641734"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between text-base font-medium text-black hover:underline py-2"
-              onClick={closeMobileMenu}
-            >
-              <div className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5" />
-                <span>Chat</span>
-              </div>
-              <ChevronRight className="w-5 h-5" />
-            </a>
-
-            {/* Call Link */}
-            <a
-              href="tel:+8801862641734"
-              className="flex items-center justify-between text-base font-medium text-black hover:underline py-2"
-              onClick={closeMobileMenu}
-            >
-              <div className="flex items-center gap-2">
-                <Phone className="w-5 h-5" />
-                <span>Call</span>
-              </div>
-              <ChevronRight className="w-5 h-5" />
-            </a>
-
-            <Link
-              href="/customer-reviews"
-              className="flex items-center justify-between text-base font-medium text-black hover:underline py-2"
-              onClick={closeMobileMenu}
-            >
-              <span>Customer Reviews</span>
-              <ChevronRight className="w-5 h-5" />
-            </Link>
-          </div>
-        </div>
-      </div>
 
       {/* Search Modal */}
       {isSearchModalOpen && (
