@@ -258,6 +258,17 @@ export interface CreateMultiProductOrderData {
   total_price: number;
 }
 
+export interface CreateSingleProductOrderData {
+  customer_name: string;
+  district: string;
+  address: string;
+  phone_number: string;
+  product: CreateOrderProductItem;
+  product_total: number;
+  delivery_charge: number;
+  total_price: number;
+}
+
 export interface Order {
   id: number;
   customer_name: string;
@@ -332,7 +343,7 @@ export const orderApi = {
     return response.data;
   },
 
-  createMultiProduct: async (data: CreateMultiProductOrderData): Promise<Order> => {
+  createSingleProduct: async (data: CreateSingleProductOrderData): Promise<Order> => {
     const response = await api.post('/api/orders/create/', data);
     return response.data;
   },

@@ -106,7 +106,7 @@ export function ProductCard({ product }: ProductCardProps) {
             }
           }}
         >
-          {isOutOfStock ? 'Sold Out' : 'Order now'}
+          {isOutOfStock ? 'Sold Out' : 'অর্ডার করুন'}
         </Link>
       </div>
     </div>

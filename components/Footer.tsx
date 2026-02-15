@@ -122,7 +122,7 @@ export function Footer() {
           <p>
             © 2026 AP Brand Store. All rights reserved. | Developed by{' '}
             <a
-              href="https://wa.me/8801601571480"
+              href="https:www.mushfikurahmaan.com"
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-gray-700 hover:text-green-600 transition-colors"

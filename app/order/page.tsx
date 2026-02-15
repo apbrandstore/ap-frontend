@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Product, ProductColor, productApi, getImageUrl, orderApi, CreateMultiProductOrderData, Order } from '@/lib/api';
+import { Product, ProductColor, productApi, getImageUrl, orderApi, CreateSingleProductOrderData, Order } from '@/lib/api';
 import { ArrowLeft, Plus, X, Minus, CheckCircle, Download, ShoppingBag, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { generateOrderPDF, OrderPDFData } from '@/lib/generateOrderPDF';
@@ -188,9 +188,6 @@ function OrderPageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [showProductSelector, setShowProductSelector] = useState(false);
-  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<{
     order: Order;
     items: OrderItem[];
@@ -268,25 +265,6 @@ function OrderPageContent() {
     fetchProduct();
   }, [productId, colorId]);
 
-  useEffect(() => {
-    async function fetchAvailableProducts() {
-      if (!showProductSelector) return;
-      
-      try {
-        setLoadingProducts(true);
-        const products = await productApi.getAll();
-        // Show all products that are in stock (allow adding same product multiple times)
-        const filteredProducts = products.filter(p => p.stock > 0);
-        setAvailableProducts(filteredProducts);
-      } catch (err) {
-        // Silently handle error
-      } finally {
-        setLoadingProducts(false);
-      }
-    }
-    fetchAvailableProducts();
-  }, [showProductSelector]);
-
   // Scroll to top when success screen is shown
   useEffect(() => {
     if (success) {
@@ -329,25 +307,10 @@ function OrderPageContent() {
     ));
   };
 
-  const handleAddProduct = (product: Product) => {
-    const activeColors = product.colors?.filter(c => c.is_active).sort((a, b) => a.order - b.order) || [];
-    setOrderItems(prev => [...prev, {
-      product,
-      quantity: 1,
-      product_size: '',
-      selectedColor: activeColors.length > 0 ? activeColors[0] : null,
-    }]);
-    setShowProductSelector(false);
-  };
-
   const handleItemColorChange = (index: number, color: ProductColor) => {
     setOrderItems(prev => prev.map((item, i) => 
       i === index ? { ...item, selectedColor: color } : item
     ));
-  };
-
-  const handleRemoveProduct = (index: number) => {
-    setOrderItems(prev => prev.filter((_, i) => i !== index));
   };
   
   // Calculate totals
@@ -414,36 +377,33 @@ function OrderPageContent() {
     setSubmitting(true);
 
     try {
-      // Build products array for multi-product order
-      const products = orderItems.map(item => {
-        const unitPrice = parseFloat(item.product.current_price);
-        const itemTotal = unitPrice * item.quantity;
-        
-        return {
-          product_id: item.product.id,
-          product_name: item.product.name,
-          product_size: item.product_size.trim() || '',
-          product_color: item.selectedColor?.name || '',
-          product_image: item.product.image ? getImageUrl(item.product.image) : null,
-          quantity: item.quantity,
-          unit_price: parseFloat(unitPrice.toFixed(2)),
-          product_total: parseFloat(itemTotal.toFixed(2)),
-        };
-      });
+      const item = orderItems[0];
+      const unitPrice = parseFloat(item.product.current_price);
+      const itemTotal = unitPrice * item.quantity;
 
-      // Create single order with multiple products
-      const orderData: CreateMultiProductOrderData = {
+      const product = {
+        product_id: item.product.id,
+        product_name: item.product.name,
+        product_size: item.product_size.trim() || '',
+        product_color: item.selectedColor?.name || '',
+        product_image: item.product.image ? getImageUrl(item.product.image) : null,
+        quantity: item.quantity,
+        unit_price: parseFloat(unitPrice.toFixed(2)),
+        product_total: parseFloat(itemTotal.toFixed(2)),
+      };
+
+      const orderData: CreateSingleProductOrderData = {
         customer_name: formData.customer_name.trim(),
         district: getDistrictForAPI(),
         address: formData.address.trim(),
         phone_number: formData.phone_number.trim(),
-        products: products,
+        product,
         product_total: parseFloat(getProductTotal().toFixed(2)),
         delivery_charge: getDeliveryCharge(),
         total_price: parseFloat(getTotalPrice().toFixed(2)),
       };
 
-      const order = await orderApi.createMultiProduct(orderData);
+      const order = await orderApi.createSingleProduct(orderData);
       
       // Store completed order data for success screen
       setCompletedOrder({
@@ -729,18 +689,18 @@ function OrderPageContent() {
                             </div>
                           );
                         })()}
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <a
-                                href={`/products/${item.product.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-semibold text-black mb-1 hover:underline cursor-pointer block"
-                              >
-                                {item.product.name}
-                              </a>
-                              <p className="text-sm text-gray-600 capitalize mb-1">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <a
+                                    href={`/products/${item.product.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-semibold text-black mb-1 hover:underline cursor-pointer block"
+                                  >
+                                    {item.product.name}
+                                  </a>
+                                  <p className="text-sm text-gray-600 capitalize mb-1">
                               {item.product.category?.parent_name 
                                 ? `${item.product.category.parent_name} - ${item.product.category.name}` 
                                 : item.product.category?.name || item.product.category_slug}
@@ -749,16 +709,6 @@ function OrderPageContent() {
                                 ৳{parseFloat(item.product.current_price).toFixed(0)}.00
                               </div>
                             </div>
-                            {orderItems.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveProduct(index)}
-                                className="text-red-500 hover:text-red-700 p-1"
-                                title="Remove product"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -838,67 +788,43 @@ function OrderPageContent() {
                 })}
               </div>
 
-              {/* Add Another Product Button */}
+              {/* Delivery area - under product size, over totals */}
               <div className="mb-4">
-                <button
-                  type="button"
-                  onClick={() => setShowProductSelector(!showProductSelector)}
-                  className="w-full py-2 px-4 border-2 border-dashed border-gray-300 rounded hover:border-black hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-black"
-                >
-                  <Plus className="w-4 h-4" />
-                  আরেকটি পণ্য যোগ করুন
-                </button>
-              </div>
-
-              {/* Product Selector */}
-              {showProductSelector && (
-                <div className="mb-4 border-2 border-gray-200 rounded p-4 max-h-64 overflow-y-auto">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-black">পণ্য নির্বাচন করুন</h3>
-                    <button
-                      type="button"
-                      onClick={() => setShowProductSelector(false)}
-                      className="text-gray-500 hover:text-black"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {loadingProducts ? (
-                    <div className="text-center py-4 text-sm text-gray-600">লোড হচ্ছে...</div>
-                  ) : availableProducts.length === 0 ? (
-                    <div className="text-center py-4 text-sm text-gray-600">কোন পণ্য পাওয়া যায়নি</div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      {availableProducts.map((product) => (
-                        <button
-                          key={product.id}
-                          type="button"
-                          onClick={() => handleAddProduct(product)}
-                          className="text-left p-2 border border-gray-200 rounded hover:border-black hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="relative w-full aspect-square mb-2 rounded overflow-hidden bg-gray-100">
-                            {getImageUrl(product.image) ? (
-                              <Image
-                                src={getImageUrl(product.image)!}
-                                alt={product.name}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-gray-400 text-xs">No Image</span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="font-medium text-xs text-black line-clamp-2 leading-tight mb-1">{product.name}</div>
-                          <div className="text-xs text-gray-600 font-semibold">৳{parseFloat(product.current_price).toFixed(0)}.00</div>
-                        </button>
-                      ))}
+                <label className="block text-sm font-medium text-black mb-2">
+                  ডেলিভারি এলাকা <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="district"
+                        value="inside_dhaka"
+                        checked={formData.district === 'inside_dhaka'}
+                        onChange={handleInputChange}
+                        required
+                        className="w-4 h-4 text-black border-2 border-gray-300 focus:outline-none cursor-pointer"
+                      />
+                      <span className="ml-3 text-black">ঢাকা সিটির ভেতরে</span>
                     </div>
-                  )}
+                    <span className="text-black font-semibold">৳80</span>
+                  </label>
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="district"
+                        value="outside_dhaka"
+                        checked={formData.district === 'outside_dhaka'}
+                        onChange={handleInputChange}
+                        className="w-4 h-4 text-black border-2 border-gray-300 focus:outline-none cursor-pointer"
+                      />
+                      <span className="ml-3 text-black">ঢাকা সিটির বাহিরে</span>
+                    </div>
+                    <span className="text-black font-semibold">৳150</span>
+                  </label>
                 </div>
-              )}
+              </div>
 
               {/* Price Summary - Always visible and updates immediately */}
               <div className="border-t border-gray-200 pt-3 mt-3">
@@ -970,43 +896,6 @@ function OrderPageContent() {
                     className="w-full px-4 py-2 border-2 border-gray-300 rounded focus:outline-none focus:border-black resize-none"
                     placeholder="আপনার ঠিকানা"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-black mb-2">
-                    ডেলিভারি এলাকা <span className="text-red-500">*</span>
-                  </label>
-                  <div className="space-y-2">
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          name="district"
-                          value="inside_dhaka"
-                          checked={formData.district === 'inside_dhaka'}
-                          onChange={handleInputChange}
-                          required
-                          className="w-4 h-4 text-black border-2 border-gray-300 focus:outline-none cursor-pointer"
-                        />
-                        <span className="ml-3 text-black">ঢাকা সিটির ভেতরে</span>
-                      </div>
-                      <span className="text-black font-semibold">৳80</span>
-                    </label>
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <div className="flex items-center">
-                        <input
-                          type="radio"
-                          name="district"
-                          value="outside_dhaka"
-                          checked={formData.district === 'outside_dhaka'}
-                          onChange={handleInputChange}
-                          className="w-4 h-4 text-black border-2 border-gray-300 focus:outline-none cursor-pointer"
-                        />
-                        <span className="ml-3 text-black">ঢাকা সিটির বাহিরে</span>
-                      </div>
-                      <span className="text-black font-semibold">৳150</span>
-                    </label>
-                  </div>
                 </div>
 
                 {error && (
