@@ -1,0 +1,425 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 3.9%;
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96.1%;
+  --muted-foreground: 0 0% 45.1%;
+  --accent: 0 0% 96.1%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 89.8%;
+  --input: 0 0% 89.8%;
+  --ring: 0 0% 3.9%;
+  --radius: 0.5rem;
+  /* Semantic brand/action colors (use in @theme, not raw hex in JSX) */
+  --whatsapp: #25D366;
+  --whatsapp-hover: #20bd5a;
+  --success: #018849;
+  --success-hover: #016d3a;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-hover: var(--whatsapp-hover);
+  --color-success: var(--success);
+  --color-success-hover: var(--success-hover);
+  --font-sans: var(--font-funnel-sans), "Funnel Sans", sans-serif;
+  --font-space-grotesk: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+}
+
+* {
+  border-color: hsl(var(--border));
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+html {
+  font-family: var(--font-funnel-sans), "Funnel Sans", sans-serif;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-funnel-sans), "Funnel Sans", sans-serif;
+}
+
+/* Gen Z Zone Design Enhancements */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Smooth transitions */
+a, button {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Prevent scroll behavior on input focus */
+input:focus {
+  scroll-margin: 0;
+  scroll-behavior: auto;
+}
+
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Image preview modal animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.25s ease-out forwards;
+}
+
+/* Marquee animation - seamless infinite scroll */
+@keyframes marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 600s linear infinite;
+  display: flex;
+  will-change: transform;
+  width: max-content;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Prevent animation restart glitch on mobile */
+@media (max-width: 768px) {
+  .animate-marquee {
+    animation-duration: 480s;
+  }
+}
+
+/* Design tokens: heading font */
+.font-heading {
+  font-family: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+}
+
+/* Navbar offset for sticky sidebar (80px) */
+.pt-navbar-offset {
+  padding-top: 80px;
+}
+
+/*
+ * Design system: semantic component classes
+ * Use these class names in JSX instead of long Tailwind strings.
+ * Prefer design tokens (e.g. bg-primary, text-success) over arbitrary values.
+ */
+@layer components {
+  .section-heading {
+    @apply text-2xl md:text-3xl font-bold mb-2 text-primary;
+    font-family: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  }
+
+  .section-subtitle {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .btn-outline-primary {
+    @apply inline-block rounded font-medium text-sm md:text-base border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors;
+    @apply px-6 md:px-8 py-2 md:py-3;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors;
+  }
+
+  .btn-success {
+    @apply flex-1 py-4 text-sm font-bold tracking-wide transition-all bg-success hover:bg-success-hover text-white;
+  }
+
+  .btn-success:disabled {
+    @apply bg-gray-200 text-gray-400 cursor-not-allowed;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded border-2 border-black text-black hover:bg-black hover:text-white transition-colors font-medium;
+  }
+
+  .btn-outline-muted {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-900 text-gray-900 font-medium rounded-lg hover:bg-gray-900 hover:text-white transition-colors;
+  }
+
+  .btn-outline-secondary {
+    @apply flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-900 text-gray-900 font-medium rounded-lg hover:bg-gray-900 hover:text-white transition-colors;
+  }
+
+  .btn-green-solid {
+    @apply flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors;
+  }
+
+  .btn-icon-round {
+    @apply w-10 h-10 border-2 border-gray-300 rounded flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  }
+
+  .btn-icon-round-sm {
+    @apply w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  }
+
+  .btn-muted {
+    @apply bg-gray-200 text-black px-4 py-2 rounded-md hover:bg-gray-300 transition-colors;
+  }
+
+  /* FABs */
+  .fab-scroll-top {
+    @apply fixed right-4 bottom-20 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors z-40 bg-black text-white hover:bg-gray-800 md:hidden;
+  }
+
+  .fab-whatsapp {
+    @apply fixed right-4 bottom-4 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors z-40 bg-whatsapp hover:bg-whatsapp-hover text-white hidden md:flex;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-lg border border-gray-200 p-4;
+  }
+
+  .card-product {
+    @apply bg-white rounded-lg border border-gray-200 overflow-hidden transition-transform md:hover:scale-105 flex flex-col h-full;
+  }
+
+  .card-cart-item {
+    @apply bg-white border border-gray-200 rounded-lg p-4 md:p-6 flex flex-col md:flex-row gap-4;
+  }
+
+  /* Form */
+  .input {
+    @apply w-full px-4 py-2 border-2 border-gray-300 rounded focus:outline-none focus:border-black text-black;
+  }
+
+  .input-search {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black text-black;
+  }
+
+  .input-textarea {
+    @apply w-full px-4 py-2 border-2 border-gray-300 rounded focus:outline-none focus:border-black resize-none text-black;
+  }
+
+  /* Navigation */
+  .nav-item {
+    @apply flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-gray-100 rounded transition-colors;
+  }
+
+  .nav-item-active {
+    @apply flex items-center gap-3 px-3 py-2 text-sm text-black hover:bg-gray-100 rounded transition-colors;
+  }
+
+  .nav-item-sub {
+    @apply flex items-center gap-3 px-3 py-2 pl-8 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors;
+  }
+
+  .nav-drawer-item {
+    @apply block py-2.5 px-2 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded;
+  }
+
+  .bottom-sheet {
+    @apply fixed left-0 right-0 bottom-0 z-[70] md:hidden bg-white rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col pb-[env(safe-area-inset-bottom,0)];
+  }
+
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white text-black border-t border-gray-200 pb-[env(safe-area-inset-bottom,0)];
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0 flex-1 text-black/80 hover:text-black transition-colors;
+  }
+
+  .sidebar {
+    @apply hidden lg:block w-64 bg-white border-r border-gray-200 sticky top-0 self-start h-screen overflow-y-auto;
+    padding-top: 80px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Misc */
+  .img-placeholder {
+    @apply w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center;
+  }
+
+  .badge-sale {
+    @apply absolute top-1 left-1 md:top-2 md:left-2 bg-red-600 text-white px-1.5 py-0.5 md:px-2 md:py-1 rounded text-[10px] md:text-xs font-bold;
+  }
+
+  .badge-new {
+    @apply absolute top-2 right-2 md:top-4 md:right-4 bg-black text-white px-2 py-0.5 md:px-3 md:py-1 rounded text-[10px] md:text-xs font-bold uppercase;
+  }
+
+  .badge-stock {
+    @apply absolute bottom-4 right-4 bg-black/80 text-white text-xs font-semibold px-3 py-1.5 tracking-wide;
+  }
+
+  .badge-instock {
+    @apply bg-success hover:bg-success-hover text-white;
+  }
+
+  .modal-close-btn {
+    @apply absolute top-4 right-4 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors;
+  }
+
+  .modal-close-btn-sm {
+    @apply absolute top-1 right-1 w-6 h-6 bg-white/90 hover:bg-white rounded-full flex items-center justify-center transition-opacity duration-200 shadow-sm hidden md:flex opacity-0;
+  }
+
+  .group:hover .modal-close-btn-sm {
+    @apply opacity-100;
+  }
+
+  .carousel-btn-prev {
+    @apply absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-lg transition-all;
+  }
+
+  .carousel-btn-next {
+    @apply absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-lg transition-all;
+  }
+
+  .loading-overlay {
+    @apply fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm transition-opacity duration-300 bg-white/95;
+  }
+
+  .search-row {
+    @apply w-full p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 text-left transition-colors;
+  }
+
+  .search-footer-btn {
+    @apply w-full p-3 bg-gray-50 hover:bg-gray-100 text-center text-sm font-medium text-black border-t border-gray-200 transition-colors;
+  }
+
+  .footer-icon-btn {
+    @apply w-10 h-10 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity;
+  }
+
+  .dropdown-panel {
+    @apply absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg transition-all duration-200 z-[200] opacity-0 invisible;
+  }
+
+  .group:hover .dropdown-panel {
+    @apply opacity-100 visible;
+  }
+
+  .dropdown-item {
+    @apply flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-100;
+  }
+
+  .marquee-bar {
+    @apply container mx-auto px-4 py-2 flex items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500;
+  }
+
+  .drawer-header {
+    @apply flex items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0;
+  }
+
+  .center-absolute {
+    @apply absolute left-1/2 -translate-x-1/2 flex items-center justify-center z-30 pointer-events-auto;
+  }
+
+  .order-summary-row {
+    @apply flex justify-between font-bold text-lg text-gray-900 pt-2 border-t border-gray-200;
+  }
+
+  .success-icon-wrap {
+    @apply inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4;
+  }
+
+  .quantity-stepper {
+    @apply w-10 h-10 border-2 border-gray-300 rounded flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  }
+
+  .quantity-stepper-sm {
+    @apply w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
+  }
+
+  .checkout-btn {
+    @apply w-full py-3 mt-3 border-2 border-black text-black rounded hover:bg-black hover:text-white transition-colors font-medium;
+  }
+
+  .btn-order-product {
+    @apply block text-center mt-auto w-full py-1.5 px-2 md:py-2 md:px-4 rounded border-2 border-black text-xs md:text-sm font-medium transition-colors bg-black text-white hover:bg-gray-800;
+  }
+
+  .btn-order-product-disabled {
+    @apply block text-center mt-auto w-full py-1.5 px-2 md:py-2 md:px-4 rounded border-2 border-gray-300 text-xs md:text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed pointer-events-none;
+  }
+
+  .product-title-link {
+    @apply text-sm md:text-base font-normal text-black mb-1 md:mb-1.5 line-clamp-2 min-h-[2rem] md:min-h-[2.5rem] hover:underline;
+  }
+
+  .accordion-row {
+    @apply w-full py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors;
+  }
+}
