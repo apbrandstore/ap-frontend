@@ -1,6 +1,27 @@
-import type { HomepageData, HomepageDerived, Product } from "@/types/api";
+import type { HomepageData, HomepageDerived, Product, SiteSettings } from "@/types/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+/** Server-only: fetch site settings (e.g. hero image). Use in Server Components. */
+export async function fetchSiteSettings(): Promise<SiteSettings | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/site-settings/`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+/** Build absolute hero image URL for server-rendered first paint. */
+export function buildHeroUrl(heroImage: string | null): string | null {
+  if (!heroImage) return null;
+  if (heroImage.startsWith("http://") || heroImage.startsWith("https://")) return heroImage;
+  const clean = heroImage.startsWith("/") ? heroImage : `/${heroImage}`;
+  return `${API_BASE}${clean}`;
+}
 
 /** Server-only: fetch homepage data. Use in Server Components. */
 export async function fetchHomepageData(): Promise<HomepageData | null> {

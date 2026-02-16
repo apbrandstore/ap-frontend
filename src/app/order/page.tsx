@@ -861,7 +861,7 @@ function OrderPageContent() {
                     value={formData.customer_name}
                     onChange={handleInputChange}
                     required
-                    className="input"
+                    className="input-textarea"
                     placeholder="আপনার নাম"
                   />
                 </div>
@@ -877,7 +877,7 @@ function OrderPageContent() {
                     value={formData.phone_number}
                     onChange={handleInputChange}
                     required
-                    className="input"
+                    className="input-textarea"
                     placeholder="01XXXXXXXXX"
                   />
                 </div>

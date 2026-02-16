@@ -5,10 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { siteSettingsApi, getImageUrl } from '@/lib/api';
 
-const DEFAULT_HERO_SRC = '/media/apb-hero.png';
-
-export function Hero() {
-  const [heroSrc, setHeroSrc] = useState<string>(DEFAULT_HERO_SRC);
+export function Hero({ initialHeroSrc }: { initialHeroSrc?: string }) {
+  const [heroSrc, setHeroSrc] = useState<string | null>(initialHeroSrc ?? null);
 
   useEffect(() => {
     siteSettingsApi.get().then((settings) => {
@@ -22,15 +20,17 @@ export function Hero() {
       {/* Main Banner - full image visible, no cropping; container matches typical hero aspect */}
       <div className="relative w-full min-h-[200px] aspect-[16/9] md:aspect-[21/9] lg:aspect-[3/1]">
         {/* Hero image - fully visible, no crop; any letterboxing is white (section bg) */}
-        <Image
-          src={heroSrc}
-          alt="AP Brand hero"
-          fill
-          priority
-          quality={92}
-          sizes="100vw"
-          className="object-contain"
-        />
+        {heroSrc ? (
+          <Image
+            src={heroSrc}
+            alt="AP Brand hero"
+            fill
+            priority
+            quality={92}
+            sizes="100vw"
+            className="object-contain"
+          />
+        ) : null}
         
         {/* Shop Now Button - Center Bottom - Mobile Only */}
         <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 md:hidden">

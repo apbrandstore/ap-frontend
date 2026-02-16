@@ -17,9 +17,10 @@ const SKELETON_GRID_CLASS = "grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6";
 
 interface HomePageContentProps {
   data: HomepageDerived;
+  initialHeroUrl?: string | null;
 }
 
-export function HomePageContent({ data }: HomePageContentProps) {
+export function HomePageContent({ data, initialHeroUrl }: HomePageContentProps) {
   const [hotExpanded, setHotExpanded] = useState(false);
 
   const {
@@ -55,7 +56,7 @@ export function HomePageContent({ data }: HomePageContentProps) {
 
   return (
     <div className="min-h-screen bg-white">
-      <Hero />
+      <Hero initialHeroSrc={initialHeroUrl ?? undefined} />
 
       {/* Hot Section */}
       {(displayedHot.length > 0 || homeError) && (
