@@ -27,23 +27,12 @@ export function HomePageContent({ data, initialHeroUrl }: HomePageContentProps) 
     newDropsFeatured,
     trendingFeatured,
     hotProducts,
-    comboProducts,
-    coupleProducts,
-    mensProducts,
-    womensProducts,
+    categorySections,
     error: homeError,
   } = data;
 
   const displayedHot = hotExpanded ? hotProducts : hotProducts.slice(0, 4);
   const hasMoreHot = hotProducts.length > 4;
-  const displayedCombo = comboProducts.slice(0, 8);
-  const displayedCouple = coupleProducts.slice(0, 8);
-  const displayedMens = mensProducts.slice(0, 8);
-  const displayedWomens = womensProducts.slice(0, 8);
-  const hasMoreCombo = comboProducts.length > 8;
-  const hasMoreCouple = coupleProducts.length > 8;
-  const hasMoreMens = mensProducts.length > 8;
-  const hasMoreWomens = womensProducts.length > 8;
   const showTrendingTile = Boolean(trendingFeatured);
 
   const ProductCardSkeletons = ({ count }: { count: number }) => (
@@ -158,125 +147,46 @@ export function HomePageContent({ data, initialHeroUrl }: HomePageContentProps) 
         </div>
       </section>
 
-      {/* Combo Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="mb-12 text-center">
-          <h2 className="section-heading">Combo</h2>
-          <p className="section-subtitle">Special combo offers for you</p>
-        </div>
-        {homeError ? (
-          <div className={SECTION_GRID_CLASS}>
-            <ProductCardSkeletons count={8} />
-          </div>
-        ) : comboProducts.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">No combo products available</div>
-        ) : (
-          <>
-            <div className={SECTION_GRID_CLASS}>
-              {displayedCombo.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+      {/* Category sections (dynamic from backend) */}
+      {categorySections.map(({ category, products }) => {
+        const displayed = products.slice(0, 8);
+        const hasMore = products.length > 8;
+        return (
+          <section key={category.id} className="container mx-auto px-4 py-16">
+            <div className="mb-12 text-center">
+              <h2 className="section-heading">{category.name}</h2>
+              <p className="section-subtitle">Explore our {category.name} collection</p>
             </div>
-            {hasMoreCombo && (
-              <div className="text-center mt-6 md:mt-8">
-                <Link href="/products?category=combo" className="btn-outline-primary">
-                  View More
-                </Link>
+            {homeError ? (
+              <div className={SECTION_GRID_CLASS}>
+                <ProductCardSkeletons count={8} />
               </div>
-            )}
-          </>
-        )}
-      </section>
-
-      {/* Couple Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="mb-12 text-center">
-          <h2 className="section-heading">Couple</h2>
-          <p className="section-subtitle">Perfect matching outfits for couples</p>
-        </div>
-        {homeError ? (
-          <div className={SECTION_GRID_CLASS}>
-            <ProductCardSkeletons count={8} />
-          </div>
-        ) : coupleProducts.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">No couple products available</div>
-        ) : (
-          <>
-            <div className={SECTION_GRID_CLASS}>
-              {displayedCouple.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-            {hasMoreCouple && (
-              <div className="text-center mt-6 md:mt-8">
-                <Link href="/products?category=couple" className="btn-outline-primary">
-                  View More
-                </Link>
+            ) : products.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                No {category.name} products available
               </div>
+            ) : (
+              <>
+                <div className={SECTION_GRID_CLASS}>
+                  {displayed.map((product: Product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+                {hasMore && (
+                  <div className="text-center mt-6 md:mt-8">
+                    <Link
+                      href={`/products?category=${encodeURIComponent(category.slug)}`}
+                      className="btn-outline-primary"
+                    >
+                      View More
+                    </Link>
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
-      </section>
-
-      {/* Men's Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="mb-12 text-center">
-          <h2 className="section-heading">Men's</h2>
-          <p className="section-subtitle">Premium men's apparel collection</p>
-        </div>
-        {homeError ? (
-          <div className={SECTION_GRID_CLASS}>
-            <ProductCardSkeletons count={8} />
-          </div>
-        ) : mensProducts.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">No men's products available</div>
-        ) : (
-          <>
-            <div className={SECTION_GRID_CLASS}>
-              {displayedMens.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-            {hasMoreMens && (
-              <div className="text-center mt-6 md:mt-8">
-                <Link href="/products?category=men" className="btn-outline-primary">
-                  View More
-                </Link>
-              </div>
-            )}
-          </>
-        )}
-      </section>
-
-      {/* Women's Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="mb-12 text-center">
-          <h2 className="section-heading">Women's</h2>
-          <p className="section-subtitle">Elegant women's fashion collection</p>
-        </div>
-        {homeError ? (
-          <div className={SECTION_GRID_CLASS}>
-            <ProductCardSkeletons count={8} />
-          </div>
-        ) : womensProducts.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">No women's products available</div>
-        ) : (
-          <>
-            <div className={SECTION_GRID_CLASS}>
-              {displayedWomens.map((product: Product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-            {hasMoreWomens && (
-              <div className="text-center mt-6 md:mt-8">
-                <Link href="/products?category=womens" className="btn-outline-primary">
-                  View More
-                </Link>
-              </div>
-            )}
-          </>
-        )}
-      </section>
+          </section>
+        );
+      })}
     </div>
   );
 }

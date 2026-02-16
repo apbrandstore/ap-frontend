@@ -36,21 +36,36 @@ export async function fetchHomepageData(): Promise<HomepageData | null> {
   }
 }
 
-function productInCategory(p: Product, slug: string): boolean {
-  const s = (p.category_slug || p.category?.slug || "").toLowerCase();
-  const parent = (p.category?.parent_slug || "").toLowerCase();
-  return s === slug || parent === slug;
+/** Server-only: fetch category tree (top-level categories with children). Use in Server Components. */
+export async function fetchCategoriesTree(): Promise<{ id: number; name: string; slug: string }[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/categories/tree/`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
 
-export function computeHomepageDerived(data: HomepageData | null): HomepageDerived {
+function getProductTopLevelSlug(p: Product): string | null {
+  const parent = p.category?.parent_slug ?? null;
+  const slug = p.category_slug ?? p.category?.slug ?? null;
+  const raw = (parent ?? slug ?? "").toLowerCase();
+  return raw || null;
+}
+
+export function computeHomepageDerived(
+  data: HomepageData | null,
+  categories: { id: number; name: string; slug: string }[]
+): HomepageDerived {
   const empty: HomepageDerived = {
     newDropsFeatured: null,
     trendingFeatured: null,
     hotProducts: [],
-    comboProducts: [],
-    coupleProducts: [],
-    mensProducts: [],
-    womensProducts: [],
+    categorySections: [],
     error: data ? null : "Failed to load products",
   };
   if (!data) return empty;
@@ -64,14 +79,28 @@ export function computeHomepageDerived(data: HomepageData | null): HomepageDeriv
     })
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
+  const categorySlugSet = new Set(categories.map((c) => c.slug.toLowerCase()));
+  const productsBySlug = new Map<string, Product[]>();
+  for (const cat of categories) {
+    productsBySlug.set(cat.slug.toLowerCase(), []);
+  }
+  for (const p of products) {
+    const topSlug = getProductTopLevelSlug(p);
+    if (topSlug && categorySlugSet.has(topSlug)) {
+      productsBySlug.get(topSlug)!.push(p);
+    }
+  }
+
+  const categorySections = categories.map((category) => ({
+    category: { id: category.id, name: category.name, slug: category.slug },
+    products: productsBySlug.get(category.slug.toLowerCase()) ?? [],
+  }));
+
   return {
     newDropsFeatured: newDrops[0] ?? null,
     trendingFeatured: best_selling?.[0]?.product ?? null,
     hotProducts: (hot || []).map((h) => h.product).filter(Boolean),
-    comboProducts: products.filter((p) => productInCategory(p, "combo")),
-    coupleProducts: products.filter((p) => productInCategory(p, "couple")),
-    mensProducts: products.filter((p) => productInCategory(p, "men")),
-    womensProducts: products.filter((p) => productInCategory(p, "womens")),
+    categorySections,
     error: null,
   };
 }

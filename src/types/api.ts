@@ -184,9 +184,9 @@ export interface HomepageDerived {
   newDropsFeatured: Product | null;
   trendingFeatured: Product | null;
   hotProducts: Product[];
-  comboProducts: Product[];
-  coupleProducts: Product[];
-  mensProducts: Product[];
-  womensProducts: Product[];
+  categorySections: {
+    category: { id: number; name: string; slug: string };
+    products: Product[];
+  }[];
   error: string | null;
 }
