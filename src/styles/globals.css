@@ -231,9 +231,9 @@ input:focus {
     @apply bg-gray-200 text-black px-4 py-2 rounded-md hover:bg-gray-300 transition-colors;
   }
 
-  /* FABs */
+  /* FABs - desktop matches mobile menu style (black round button) */
   .fab-whatsapp {
-    @apply fixed right-4 bottom-4 w-12 h-12 rounded-full shadow-lg items-center justify-center transition-colors z-40 bg-whatsapp hover:bg-whatsapp-hover text-white hidden md:flex;
+    @apply fixed right-4 bottom-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-colors z-40 bg-black hover:bg-gray-800 text-white hidden md:flex;
   }
 
   /* Cards */

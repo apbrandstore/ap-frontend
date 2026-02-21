@@ -200,13 +200,13 @@ export function Navbar() {
             <div className="overflow-y-auto flex-1 py-2">
               <Link
                 href="/products"
-                className={`block px-4 py-3 text-sm font-medium border-b border-gray-100 hover:bg-gray-100 transition-colors ${pathname.startsWith('/products') ? 'text-black' : 'text-black/80'}`}
+                className={`block px-4 py-3 text-sm font-medium hover:bg-gray-100 transition-colors ${pathname.startsWith('/products') ? 'text-black' : 'text-black/80'}`}
                 onClick={closeHamburger}
               >
                 All Products
               </Link>
               {categories.map((category) => (
-                <div key={category.id} className="border-t border-gray-100 first:border-t-0 first:pt-0">
+                <div key={category.id}>
                   {category.children.length > 0 ? (
                     <>
                       <div className="flex items-center justify-between px-4 py-3 text-sm">
