@@ -40,14 +40,10 @@ function ProductsPageContent() {
           // Fetch regular products with optional category filter and search
           const data = await productApi.getAll(search || undefined, category || undefined);
           if (isNewDrops) {
-            const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
-            const filtered = data
-              .filter((p) => {
-                const t = new Date(p.created_at).getTime();
-                return Number.isFinite(t) && t >= cutoff;
-              })
-              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-            setProducts(filtered);
+            const sorted = [...data].sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+            setProducts(sorted);
           } else {
             setProducts(data);
           }

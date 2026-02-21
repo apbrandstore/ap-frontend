@@ -54,7 +54,7 @@ export default function RootLayout({
             <LoadingScreen />
           </Suspense>
           <Navbar />
-          <main className="min-h-screen pb-20 md:pb-0">
+          <main className="min-h-screen">
             {children}
           </main>
           <Footer />

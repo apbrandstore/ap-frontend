@@ -71,13 +71,9 @@ export function computeHomepageDerived(
   if (!data) return empty;
 
   const { products, best_selling, hot } = data;
-  const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
-  const newDrops = products
-    .filter((p) => {
-      const t = new Date(p.created_at).getTime();
-      return Number.isFinite(t) && t >= cutoff;
-    })
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const newDrops = [...products].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   const categorySlugSet = new Set(categories.map((c) => c.slug.toLowerCase()));
   const productsBySlug = new Map<string, Product[]>();

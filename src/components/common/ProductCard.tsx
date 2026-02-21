@@ -79,14 +79,14 @@ export function ProductCard({ product }: ProductCardProps) {
                 {parseFloat(product.regular_price).toFixed(0)}৳
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-sm md:text-base font-normal text-black font-mono">
+                <span className="text-base md:text-lg font-bold font-mono text-success">
                   {parseFloat(product.offer_price).toFixed(0)} ৳
                 </span>
               </div>
             </>
           ) : (
             <div className="flex items-baseline gap-2">
-              <span className="text-sm md:text-base font-normal text-black font-mono">
+              <span className="text-base md:text-lg font-bold font-mono text-black">
                 {parseFloat(product.regular_price).toFixed(0)} ৳
               </span>
             </div>

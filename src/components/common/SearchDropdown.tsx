@@ -279,7 +279,7 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
                       <div className="flex items-center gap-2 mt-1">
                         {product.has_offer && product.offer_price ? (
                           <>
-                            <span className="text-sm font-medium text-black">
+                            <span className="text-sm font-bold text-success">
                               ৳{parseFloat(product.offer_price).toFixed(0)}
                             </span>
                             <span className="text-xs text-gray-500 line-through">
@@ -287,7 +287,7 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
                             </span>
                           </>
                         ) : (
-                          <span className="text-sm font-medium text-black">
+                          <span className="text-sm font-bold text-black">
                             ৳{parseFloat(product.regular_price).toFixed(0)}
                           </span>
                         )}

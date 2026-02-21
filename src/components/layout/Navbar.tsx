@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, X, ChevronRight, ChevronDown, ShoppingBag, User, MessageCircle, Phone, Grid2X2, Plus, Minus, Mail, Heart, Home } from 'lucide-react';
+import { Search, X, ChevronRight, ChevronDown, ShoppingBag, User, Phone, Plus, Minus, Mail, Menu } from 'lucide-react';
 import { notificationApi, categoryApi, Notification, Category } from '@/lib/api';
 import { SearchDropdown } from '@/components/common/SearchDropdown';
 
@@ -18,7 +18,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
+  const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [notification, setNotification] = useState<Notification | null>(null);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
@@ -82,12 +82,12 @@ export function Navbar() {
     setIsSearchModalOpen(false);
   };
 
-  const toggleMobileCategories = () => {
-    setIsMobileCategoriesOpen((prev) => !prev);
+  const toggleHamburger = () => {
+    setIsHamburgerOpen((prev) => !prev);
   };
 
-  const closeMobileCategories = () => {
-    setIsMobileCategoriesOpen(false);
+  const closeHamburger = () => {
+    setIsHamburgerOpen(false);
   };
 
   const handleTrackOrder = (e: React.FormEvent) => {
@@ -129,11 +129,22 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Header - Logo, Search (no hamburger; nav moved to bottom bar) */}
+      {/* Mobile Header - Hamburger, Logo, Search */}
       <div className="md:hidden relative overflow-visible">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3 relative">
-          {/* Left: Spacer for balance */}
-          <div className="w-10 h-10 flex-shrink-0" aria-hidden />
+          {/* Left: Hamburger button */}
+          <button
+            onClick={toggleHamburger}
+            className="p-2 flex-shrink-0 z-10"
+            aria-label={isHamburgerOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isHamburgerOpen}
+          >
+            {isHamburgerOpen ? (
+              <X className="w-6 h-6 text-black" />
+            ) : (
+              <Menu className="w-6 h-6 text-black" />
+            )}
+          </button>
 
           {/* Center: Logo - Bigger size with absolute positioning to allow overflow */}
           <Link 
@@ -160,46 +171,49 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Categories Panel - slides up from bottom (same tree as desktop) */}
-      {isMobileCategoriesOpen && (
+      {/* Mobile Hamburger Drawer */}
+      {isHamburgerOpen && (
         <>
+          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/50 z-[60] md:hidden"
-            onClick={closeMobileCategories}
+            onClick={closeHamburger}
             aria-hidden
           />
+          {/* Drawer */}
           <div
-            className="bottom-sheet"
+            className="hamburger-drawer"
             role="dialog"
-            aria-label="Categories"
+            aria-label="Navigation menu"
           >
             <div className="drawer-header">
-              <h2 className="text-lg font-semibold text-black">Categories</h2>
+              <h2 className="text-lg font-semibold text-black">Menu</h2>
               <button
-                onClick={closeMobileCategories}
+                onClick={closeHamburger}
                 className="p-2 -m-2 text-gray-500 hover:text-black"
-                aria-label="Close categories"
+                aria-label="Close menu"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
+
             <div className="overflow-y-auto flex-1 py-2">
               <Link
                 href="/products"
-                className="block px-4 py-3 text-sm font-medium text-black hover:bg-gray-100"
-                onClick={closeMobileCategories}
+                className={`block px-4 py-3 text-sm font-medium border-b border-gray-100 hover:bg-gray-100 transition-colors ${pathname.startsWith('/products') ? 'text-black' : 'text-black/80'}`}
+                onClick={closeHamburger}
               >
                 All Products
               </Link>
               {categories.map((category) => (
-                <div key={category.id} className="border-t border-gray-100">
+                <div key={category.id} className="border-t border-gray-100 first:border-t-0 first:pt-0">
                   {category.children.length > 0 ? (
                     <>
-                      <div className="flex items-center justify-between px-4 py-3 text-sm group">
+                      <div className="flex items-center justify-between px-4 py-3 text-sm">
                         <Link
                           href={`/products?category=${category.slug}`}
-                          className="flex-1 font-medium text-black hover:underline"
-                          onClick={closeMobileCategories}
+                          className="flex-1 font-medium text-black/80 hover:text-black"
+                          onClick={closeHamburger}
                         >
                           {category.name}
                         </Link>
@@ -211,9 +225,9 @@ export function Navbar() {
                           aria-label={expandedCategories[category.slug] ? `Collapse ${category.name}` : `Expand ${category.name}`}
                         >
                           {expandedCategories[category.slug] ? (
-                            <ChevronDown className="w-5 h-5" />
+                            <Minus className="w-4 h-4" />
                           ) : (
-                            <ChevronRight className="w-5 h-5" />
+                            <Plus className="w-4 h-4" />
                           )}
                         </button>
                       </div>
@@ -224,7 +238,7 @@ export function Navbar() {
                               key={child.id}
                               href={`/products?category=${child.slug}`}
                               className="nav-drawer-item"
-                              onClick={closeMobileCategories}
+                              onClick={closeHamburger}
                             >
                               {child.name}
                             </Link>
@@ -235,8 +249,8 @@ export function Navbar() {
                   ) : (
                     <Link
                       href={`/products?category=${category.slug}`}
-                      className="block px-4 py-3 text-sm font-medium text-black hover:bg-gray-100"
-                      onClick={closeMobileCategories}
+                      className="block px-4 py-3 text-sm font-medium text-black/80 hover:text-black hover:bg-gray-100"
+                      onClick={closeHamburger}
                     >
                       {category.name}
                     </Link>
@@ -247,56 +261,6 @@ export function Navbar() {
           </div>
         </>
       )}
-
-      {/* Mobile Bottom Navigation Bar - white bg, black icons */}
-      <div className="bottom-nav">
-        <nav className="flex items-center justify-around py-2 px-2" aria-label="Mobile navigation">
-          <button
-            type="button"
-            onClick={toggleMobileCategories}
-            className={`bottom-nav-item ${isMobileCategoriesOpen || pathname.startsWith('/products') ? 'text-black' : ''}`}
-            aria-label="Category"
-            aria-expanded={isMobileCategoriesOpen}
-          >
-            <Grid2X2 className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
-            <span className="text-[10px] font-medium uppercase tracking-wide">Category</span>
-          </button>
-          <Link
-            href="/wishlist"
-            className={`flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0 flex-1 transition-colors ${pathname === '/wishlist' ? 'text-black' : 'text-black/80 hover:text-black'}`}
-            aria-label="Wishlist"
-          >
-            <Heart className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
-            <span className="text-[10px] font-medium uppercase tracking-wide">Wishlist</span>
-          </Link>
-          <Link
-            href="/"
-            className={`flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0 flex-1 transition-colors ${pathname === '/' ? 'text-black' : 'text-black/80 hover:text-black'}`}
-            aria-label="Home"
-          >
-            <Home className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
-            <span className="text-[10px] font-medium uppercase tracking-wide">Home</span>
-          </Link>
-          <a
-            href="https://wa.me/8801862641734"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bottom-nav-item"
-            aria-label="Chat"
-          >
-            <MessageCircle className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
-            <span className="text-[10px] font-medium uppercase tracking-wide">Chat</span>
-          </a>
-          <a
-            href="tel:+8801862641734"
-            className="bottom-nav-item"
-            aria-label="Call"
-          >
-            <Phone className="w-6 h-6 flex-shrink-0" strokeWidth={1.5} />
-            <span className="text-[10px] font-medium uppercase tracking-wide">Call</span>
-          </a>
-        </nav>
-      </div>
 
       {/* Desktop Top Bar with Search Icon, Logo, and Icons */}
       <div className="hidden md:block relative overflow-visible">

@@ -424,13 +424,13 @@ export default function ProductDetailPage() {
             <div className="mb-4">
               {hasOffer ? (
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-lg font-bold text-pink-600">
+                  <span className="text-lg font-bold text-success">
                     Now ৳{offerPrice?.toFixed(0)}
                   </span>
                   <span className="text-sm text-gray-500 line-through">
                     Was ৳{regularPrice.toFixed(0)}
                   </span>
-                  <span className="text-sm font-medium text-pink-600">
+                  <span className="text-sm font-medium text-success">
                     (-{discountPercentage}%)
                   </span>
                 </div>

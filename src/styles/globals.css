@@ -232,12 +232,8 @@ input:focus {
   }
 
   /* FABs */
-  .fab-scroll-top {
-    @apply fixed right-4 bottom-20 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors z-40 bg-black text-white hover:bg-gray-800 md:hidden;
-  }
-
   .fab-whatsapp {
-    @apply fixed right-4 bottom-4 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-colors z-40 bg-whatsapp hover:bg-whatsapp-hover text-white hidden md:flex;
+    @apply fixed right-4 bottom-4 w-12 h-12 rounded-full shadow-lg items-center justify-center transition-colors z-40 bg-whatsapp hover:bg-whatsapp-hover text-white hidden md:flex;
   }
 
   /* Cards */
@@ -283,16 +279,8 @@ input:focus {
     @apply block py-2.5 px-2 text-sm text-gray-700 hover:text-black hover:bg-gray-100 rounded;
   }
 
-  .bottom-sheet {
-    @apply fixed left-0 right-0 bottom-0 z-[70] md:hidden bg-white rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col pb-[env(safe-area-inset-bottom,0)];
-  }
-
-  .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white text-black border-t border-gray-200 pb-[env(safe-area-inset-bottom,0)];
-  }
-
-  .bottom-nav-item {
-    @apply flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0 flex-1 text-black/80 hover:text-black transition-colors;
+  .hamburger-drawer {
+    @apply fixed left-0 top-0 bottom-0 z-[70] md:hidden bg-white shadow-2xl w-72 max-h-screen flex flex-col pb-[env(safe-area-inset-bottom,0)];
   }
 
   .sidebar {
