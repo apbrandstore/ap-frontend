@@ -1,5 +1,11 @@
 'use client';
 
+declare global {
+  interface Window {
+    fbq?: (...args: unknown[]) => void;
+  }
+}
+
 import { useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Product, ProductColor, productApi, getImageUrl, orderApi, CreateSingleProductOrderData, Order } from '@/lib/api';
@@ -175,6 +181,22 @@ function OrderColorSelector({
       />
     </>
   );
+}
+
+function firePurchaseEvent(orderId: number, totalPrice: number, productId: number) {
+  if (typeof window === 'undefined' || !window.fbq) return;
+
+  const storageKey = `fb_purchase_fired_${orderId}`;
+  if (sessionStorage.getItem(storageKey)) return;
+
+  window.fbq(
+    'track',
+    'Purchase',
+    { value: totalPrice, currency: 'BDT', content_type: 'product', content_ids: [productId] },
+    { eventID: `order_${orderId}` }
+  );
+
+  sessionStorage.setItem(storageKey, '1');
 }
 
 function OrderPageContent() {
@@ -404,6 +426,8 @@ function OrderPageContent() {
       };
 
       const order = await orderApi.createSingleProduct(orderData);
+
+      firePurchaseEvent(order.id, getTotalPrice(), item.product.id);
       
       // Store completed order data for success screen
       setCompletedOrder({

@@ -80,7 +80,7 @@ export interface Notification {
 export interface TrackingCode {
   id: number;
   name: string;
-  code: string;
+  pixel_id: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
