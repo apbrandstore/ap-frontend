@@ -372,10 +372,14 @@ function OrderPageContent() {
       return;
     }
     
-    // Validate Bangladesh phone number: must be 11 digits
-    const phoneRegex = /^\d{11}$/;
-    if (!phoneRegex.test(formData.phone_number)) {
-      setError('মোবাইল নাম্বার ১১ সংখ্যার হতে হবে (যেমন: 01XXXXXXXXX)');
+    // Validate Bangladesh phone number: must be 11 digits and start with 01
+    const phone = formData.phone_number;
+    const phoneRegex = /^01\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      const is11Digits = /^\d{11}$/.test(phone);
+      setError(is11Digits
+        ? 'মোবাইল নাম্বার ০১ দিয়ে শুরু হতে হবে (যেমন: 01XXXXXXXXX)'
+        : 'মোবাইল নাম্বার ১১ সংখ্যার হতে হবে এবং ০১ দিয়ে শুরু হতে হবে (যেমন: 01XXXXXXXXX)');
       return;
     }
 
@@ -904,6 +908,7 @@ function OrderPageContent() {
                     className="input-textarea"
                     placeholder="01XXXXXXXXX"
                   />
+                  <p className="text-xs text-gray-500 mt-1">১১ সংখ্যা, ০১ দিয়ে শুরু (যেমন: 017XXXXXXXX)</p>
                 </div>
 
                 <div>
