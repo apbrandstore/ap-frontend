@@ -87,15 +87,14 @@ genzzone-frontend/
 
 ## API Integration
 
-The frontend communicates with the Django backend through RESTful APIs:
+The storefront uses the **Akkho Storefront API** (`/api/v1/…`) with a **publishable** key (`ak_pk_…`). See [`docs/AKKHO_STOREFRONT_API.md`](docs/AKKHO_STOREFRONT_API.md).
 
-- **Products**: `GET /api/products/`, `GET /api/products/{id}/`
-- **Best Selling**: `GET /api/best-selling/`
-- **Notifications**: `GET /api/notifications/active/`
-- **Cart**: `GET /api/cart/`, `POST /api/cart/add/`, `PUT /api/cart/items/{id}/`, `DELETE /api/cart/items/{id}/remove/`
-- **Orders**: `POST /api/orders/create/`
+- **Store / branding**: `GET /api/v1/store/public/`, `GET /api/v1/banners/`
+- **Catalog**: `GET /api/v1/products/`, `GET /api/v1/products/{slug-or-prd_id}/`, categories, search, catalog filters
+- **Cart**: client-side only (localStorage); totals via `POST /api/v1/pricing/breakdown/`
+- **Checkout**: `GET /api/v1/shipping/zones/`, `GET /api/v1/shipping/options/`, `POST /api/v1/orders/`
 
-All API calls use session-based authentication (cookies) with `withCredentials: true`.
+Do not put **secret** keys (`ak_sk_…`) in the browser. Optional: set `NEXT_PUBLIC_FACEBOOK_PIXEL_ID` for Meta Pixel (replacing server-fetched tracking codes).
 
 ## Deployment to Vercel
 
@@ -103,8 +102,10 @@ All API calls use session-based authentication (cookies) with `withCredentials: 
 2. Connect your repository to Vercel
 3. In Vercel project settings:
    - Set **Root Directory** to `/` (or leave empty)
-   - Add environment variable:
-     - `NEXT_PUBLIC_API_URL` = `https://your-backend.railway.app`
+   - Add environment variables:
+     - `NEXT_PUBLIC_API_URL` = `https://your-akkho-api-host` (origin only, no path)
+     - `NEXT_PUBLIC_AKKHO_PUBLISHABLE_KEY` = `ak_pk_…`
+     - Optional: `NEXT_PUBLIC_FACEBOOK_PIXEL_ID` for Meta Pixel
 4. Deploy!
 
 Vercel will automatically:
@@ -117,7 +118,9 @@ Vercel will automatically:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `NEXT_PUBLIC_API_URL` | Backend API URL | Yes |
+| `NEXT_PUBLIC_API_URL` | Akkho API origin (e.g. `https://api.example.com`) | Yes |
+| `NEXT_PUBLIC_AKKHO_PUBLISHABLE_KEY` | Storefront publishable key (`ak_pk_…`) | Yes |
+| `NEXT_PUBLIC_FACEBOOK_PIXEL_ID` | Meta Pixel ID (optional) | No |
 
 ## Development
 
@@ -140,11 +143,7 @@ The production build will be in the `.next` directory.
 
 ### API URL Configuration
 
-The API URL is configured in:
-- `lib/api.ts` - Base API configuration
-- `next.config.ts` - Image remote patterns for product images
-
-Update `NEXT_PUBLIC_API_URL` environment variable to point to your backend.
+The API URL and publishable key are read from env in `src/lib/storefront-config.ts` and used by `src/lib/api.ts` (client) and `src/lib/server-api.ts` (RSC `fetch`). `next.config.ts` allows images from `NEXT_PUBLIC_API_URL`.
 
 ### Image Configuration
 

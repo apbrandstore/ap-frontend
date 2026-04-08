@@ -1,9 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import Script from 'next/script';
-import { trackingCodeApi } from '@/lib/api';
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import Script from "next/script";
 
 declare global {
   interface Window {
@@ -11,36 +10,30 @@ declare global {
   }
 }
 
-function PageViewTracker({ pixelId }: { pixelId: string }) {
+function PageViewTracker() {
   const pathname = usePathname();
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     if (!initialized) {
-      // Skip the first render — the base code already fired PageView on mount
       setInitialized(true);
       return;
     }
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'PageView');
+    if (typeof window !== "undefined" && window.fbq) {
+      window.fbq("track", "PageView");
     }
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pathname, initialized]);
 
   return null;
 }
 
 export function TrackingScripts() {
-  const [pixelId, setPixelId] = useState<string | null>(null);
+  const envPixel = process.env.NEXT_PUBLIC_FACEBOOK_PIXEL_ID?.trim() || null;
+  const [pixelId, setPixelId] = useState<string | null>(envPixel);
 
   useEffect(() => {
-    async function fetchPixelId() {
-      const codes = await trackingCodeApi.getActive();
-      if (codes.length > 0 && codes[0].pixel_id) {
-        setPixelId(codes[0].pixel_id);
-      }
-    }
-    fetchPixelId();
-  }, []);
+    if (envPixel) setPixelId(envPixel);
+  }, [envPixel]);
 
   if (!pixelId) return null;
 
@@ -70,12 +63,12 @@ export function TrackingScripts() {
         <img
           height="1"
           width="1"
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
           src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
           alt=""
         />
       </noscript>
-      <PageViewTracker pixelId={pixelId} />
+      <PageViewTracker />
     </>
   );
 }

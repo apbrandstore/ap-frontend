@@ -1,192 +1,299 @@
-export interface CategoryChild {
-  id: number;
-  name: string;
-  slug: string;
+/** Paperbase storefront API shapes */
+
+export interface StorePublic {
+  store_name: string;
+  logo_url: string | null;
+  currency: string;
+  currency_symbol: string;
+  country: string;
+  support_email: string;
+  phone: string;
+  address: string;
+  extra_field_schema: unknown[];
+  modules_enabled: Record<string, boolean>;
+  theme_settings: { primary_color: string };
+  seo: { default_title: string; default_description: string };
+  policy_urls: {
+    returns?: string;
+    refund?: string;
+    privacy?: string;
+  };
+  social_links: Record<string, string>;
 }
 
-export interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  children: CategoryChild[];
-  /** Set when fetching a single category (detail); used for subcategory filter when on a child page */
-  parent_id?: number | null;
-  parent_name?: string | null;
-  parent_slug?: string | null;
-}
+/** API may return legacy `"low"`; prefer `"low_stock"` (Paperbase storefront spec). */
+export type StorefrontStockStatus =
+  | "in_stock"
+  | "low_stock"
+  | "out_of_stock"
+  | "low";
 
-export interface ProductCategory {
-  slug: string;
+export interface StorefrontProductListItem {
+  public_id: string;
   name: string;
-  parent_name: string | null;
-  parent_slug: string | null;
-}
-
-export interface ProductColor {
-  id: number;
-  name: string;
-  image: string;
-  order: number;
-  is_active: boolean;
-}
-
-export interface Product {
-  id: number;
-  name: string;
-  description: string;
-  category: ProductCategory;
+  brand: string | null;
+  sku?: string;
+  price: string;
+  original_price: string | null;
+  image_url: string | null;
+  category_public_id: string;
   category_slug: string;
-  regular_price: string;
-  offer_price: string | null;
-  current_price: string;
-  has_offer: boolean;
-  image: string | null;
-  image2: string | null;
-  image3: string | null;
-  image4: string | null;
-  stock: number;
-  is_active: boolean;
-  colors: ProductColor[];
-  created_at: string;
-  updated_at: string;
+  category_name: string;
+  slug: string;
+  stock_status: StorefrontStockStatus;
+  available_quantity: number;
+  variant_count: number;
+  extra_data?: Record<string, unknown>;
 }
 
-export interface BestSelling {
-  id: number;
-  product: Product;
+export interface ProductImage {
+  public_id: string;
+  image_url: string | null;
+  alt: string;
   order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
-export interface Hot {
-  id: number;
-  product: Product;
-  order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+export interface VariantOption {
+  attribute_public_id: string;
+  attribute_slug: string;
+  attribute_name: string;
+  value_public_id: string;
+  value: string;
 }
 
-export interface Notification {
-  id: number;
-  message: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+export interface StorefrontProductVariant {
+  public_id: string;
+  sku: string;
+  available_quantity: number;
+  stock_status: string;
+  price: string;
+  options: VariantOption[];
 }
 
-export interface TrackingCode {
-  id: number;
+export interface VariantMatrixValue {
+  value_public_id: string;
+  value: string;
+}
+
+export interface VariantMatrixAttr {
+  slug: string;
+  attribute_public_id: string;
+  attribute_name: string;
+  values: VariantMatrixValue[];
+}
+
+export type VariantMatrix = Record<string, VariantMatrixAttr>;
+
+export interface StorefrontProductDetail extends StorefrontProductListItem {
+  stock_tracking: boolean;
+  description: string;
+  images: ProductImage[];
+  variants: StorefrontProductVariant[];
+  breadcrumbs?: string[];
+  related_products?: StorefrontProductListItem[];
+  variant_matrix?: VariantMatrix;
+}
+
+export interface StorefrontCategory {
+  public_id: string;
   name: string;
-  pixel_id: string;
+  slug: string;
+  description: string;
+  image_url: string | null;
+  parent_public_id: string | null;
+  order: number;
+  children?: StorefrontCategory[];
+}
+
+/** List/card product (alias for clarity in components) */
+export type Product = StorefrontProductListItem;
+
+export type Category = StorefrontCategory;
+
+export type CategoryChild = Pick<StorefrontCategory, "public_id" | "name" | "slug">;
+
+export interface PublicBanner {
+  public_id: string;
+  title: string;
+  image_url: string | null;
+  cta_text: string;
+  cta_url: string;
+  order: number;
+  placement_slots?: BannerPlacementSlot[];
+  start_at: string | null;
+  end_at: string | null;
+}
+
+export type BannerPlacementSlot =
+  | "home_top"
+  | "home_mid"
+  | "home_bottom";
+
+export interface StorefrontNotification {
+  public_id: string;
+  cta_text: string;
+  notification_type: string;
+  cta_url: string;
+  cta_label: string;
+  order: number;
   is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  is_currently_active: boolean;
+  start_at: string | null;
+  end_at: string | null;
 }
 
-export interface SiteSettings {
-  hero_image: string | null;
-  updated_at: string;
+export interface UnifiedSearchResponse {
+  products: StorefrontProductListItem[];
+  categories: StorefrontCategory[];
+  suggestions: string[];
+  trending: boolean;
 }
 
-export interface HomepageData {
-  products: Product[];
-  best_selling: BestSelling[];
-  hot: Hot[];
+export interface CatalogFiltersPayload {
+  categories: { public_id: string; name: string; slug: string }[];
+  attributes: Record<string, { public_id: string; value: string }[]>;
+  brands: string[];
+  price_range: { min: number; max: number };
 }
 
-export interface CreateOrderData {
-  customer_name: string;
-  district: string;
-  address: string;
-  phone_number: string;
-  product_id: number;
-  product_size: string;
+export interface ShippingZone {
+  zone_public_id: string;
+  name: string;
+  estimated_days: string;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+  cost_rules: {
+    min_order_total: number;
+    shipping_cost: number;
+    max_order_total?: number;
+  }[];
+}
+
+export interface ShippingOption {
+  rate_public_id: string;
+  method_public_id: string;
+  method_name: string;
+  method_type: string;
+  method_order: number;
+  zone_public_id: string;
+  zone_name: string;
+  price: string;
+  rate_type: string;
+  min_order_total?: string;
+  max_order_total?: string;
+}
+
+export interface PricingBreakdownLine {
+  product_public_id: string;
   quantity: number;
+  unit_price: string;
+  line_subtotal: string;
 }
 
-export interface CreateOrderProductItem {
-  product_id: number;
-  product_name: string;
-  product_size: string;
-  product_color: string;
-  product_image: string | null;
-  quantity: number;
-  unit_price: number;
-  product_total: number;
+export interface PricingBreakdownResponse {
+  base_subtotal: string;
+  shipping_cost: string;
+  final_total: string;
+  lines: PricingBreakdownLine[];
 }
 
-export interface CreateMultiProductOrderData {
-  customer_name: string;
-  district: string;
-  address: string;
-  phone_number: string;
-  products: CreateOrderProductItem[];
-  product_total: number;
-  delivery_charge: number;
-  total_price: number;
-}
+/** Same envelope as pricing breakdown (Paperbase `POST /pricing/preview/`). */
+export type PricingPreviewResponse = PricingBreakdownResponse;
 
-export interface CreateSingleProductOrderData {
-  customer_name: string;
-  district: string;
-  address: string;
-  phone_number: string;
-  product: CreateOrderProductItem;
-  product_total: number;
-  delivery_charge: number;
-  total_price: number;
-}
-
-export interface Order {
-  id: number;
-  customer_name: string;
-  customer_phone: string;
-  shipping_address: string;
-  total_amount: string;
-  status: string;
-  created_at: string;
-}
-
-export interface CartItem {
-  id: number;
-  product: Product;
-  product_id: number;
-  quantity: number;
-  subtotal: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Cart {
-  id: number;
-  session_key: string;
-  items: CartItem[];
-  total: string;
-  item_count: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface AddToCartData {
-  product_id: number;
+export interface PricingPreviewRequest {
+  product_public_id: string;
+  variant_public_id?: string;
   quantity?: number;
+  shipping_zone_public_id?: string;
+  shipping_method_public_id?: string;
 }
 
-export interface UpdateCartItemData {
+export interface ShippingPreviewRequestItem {
+  product_public_id: string;
+  variant_public_id?: string;
   quantity: number;
 }
 
-/** Derived section data for the homepage (computed from HomepageData on the server). */
+export interface ShippingPreviewRequest {
+  zone_public_id: string;
+  items: ShippingPreviewRequestItem[];
+}
+
+export interface ShippingPreviewResponse {
+  shipping_cost: string;
+  estimated_days: string;
+  currency: string;
+}
+
+export interface PricingBreakdownRequestItem {
+  product_public_id: string;
+  quantity: number;
+  variant_public_id?: string;
+}
+
+export interface OrderCreateLine {
+  product_public_id: string;
+  quantity: number;
+  variant_public_id?: string;
+}
+
+export interface OrderCreatePayload {
+  shipping_zone_public_id: string;
+  shipping_method_public_id?: string;
+  shipping_name: string;
+  phone: string;
+  email?: string;
+  shipping_address: string;
+  district?: string;
+  products: OrderCreateLine[];
+}
+
+export interface OrderReceiptItem {
+  product_name: string;
+  quantity: number;
+  unit_price: string;
+  total_price: string;
+  variant_details: string | null;
+}
+
+export interface OrderReceipt {
+  public_id: string;
+  order_number: string;
+  status: string;
+  customer_name: string;
+  phone: string;
+  shipping_address: string;
+  items: OrderReceiptItem[];
+  subtotal: string;
+  shipping_cost: string;
+  total: string;
+}
+
 export interface HomepageDerived {
-  newDropsFeatured: Product | null;
-  trendingFeatured: Product | null;
-  hotProducts: Product[];
   categorySections: {
-    category: { id: number; name: string; slug: string };
-    products: Product[];
+    category: {
+      public_id: string;
+      name: string;
+      slug: string;
+      description: string;
+    };
+    products: StorefrontProductListItem[];
   }[];
   error: string | null;
+}
+
+export interface CartLine {
+  lineId: string;
+  product_public_id: string;
+  variant_public_id: string | null;
+  quantity: number;
+  snapshot: {
+    name: string;
+    slug: string;
+    image_url: string | null;
+    price: string;
+    original_price: string | null;
+    variant_label?: string;
+  };
 }

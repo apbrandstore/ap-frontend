@@ -1,0 +1,572 @@
+"use client";
+
+import React, { useEffect, useState, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  productApi,
+  storeApi,
+  getImageUrl,
+  type StorefrontProductDetail,
+  type StorefrontProductListItem,
+} from "@/lib/api";
+import { entriesForExtraData } from "@/lib/extra-field-labels";
+import { galleryImageUrlsForProduct } from "@/lib/product-gallery-urls";
+import { useCart } from "@/contexts/CartContext";
+import {
+  buildMatrixFromVariants,
+  defaultSelectionsForProduct,
+  findVariantForSelections,
+  variantLabel,
+  type VariantSelections,
+} from "@/lib/variant-utils";
+import { ChevronLeft, ChevronRight, Heart, ChevronDown, ChevronUp } from "lucide-react";
+import Image from "next/image";
+import { ProductCard } from "@/components/common/ProductCard";
+import { PlacementBanners } from "@/components/common/PlacementBanners";
+import type { StorefrontProductVariant } from "@/types/api";
+
+function ProductImageGallery({
+  imageUrls,
+  productName,
+  lowStock,
+}: {
+  imageUrls: string[];
+  productName: string;
+  lowStock: boolean;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [imageUrls.join("|")]);
+
+  if (imageUrls.length === 0) {
+    return (
+      <div className="w-full aspect-[3/4] bg-gray-100 flex items-center justify-center">
+        <span className="text-gray-400 text-lg">No Image</span>
+      </div>
+    );
+  }
+
+  const handlePrevious = () => {
+    setActiveIndex((i) => (i === 0 ? imageUrls.length - 1 : i - 1));
+  };
+
+  const handleNext = () => {
+    setActiveIndex((i) => (i === imageUrls.length - 1 ? 0 : i + 1));
+  };
+
+  const mainSrc = getImageUrl(imageUrls[activeIndex])!;
+
+  return (
+    <div className="flex gap-3">
+      {imageUrls.length > 1 && (
+        <div className="hidden md:flex flex-col gap-2 w-16 flex-shrink-0">
+          {imageUrls.map((url, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              className={`relative aspect-[3/4] overflow-hidden transition-all ${
+                activeIndex === index ? "ring-2 ring-black" : "hover:opacity-75"
+              }`}
+            >
+              <Image
+                src={getImageUrl(url)!}
+                alt={`View ${index + 1}`}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="flex-1 relative">
+        <div className="relative w-full aspect-[3/4] bg-gray-50 overflow-hidden">
+          <Image
+            src={mainSrc}
+            alt={productName}
+            fill
+            className="object-cover"
+            unoptimized
+            priority
+          />
+
+          {lowStock && (
+            <div className="badge-stock">SELLING FAST</div>
+          )}
+
+          {imageUrls.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevious}
+                className="carousel-btn-prev"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-700" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                className="carousel-btn-next"
+                aria-label="Next image"
+              >
+                <ChevronRight className="w-5 h-5 text-gray-700" />
+              </button>
+            </>
+          )}
+        </div>
+
+        {imageUrls.length > 1 && (
+          <div className="flex md:hidden gap-2 mt-3 justify-center px-4">
+            {imageUrls.map((url, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setActiveIndex(index)}
+                className={`relative w-16 h-16 overflow-hidden flex-shrink-0 transition-all ${
+                  activeIndex === index
+                    ? "ring-2 ring-black ring-offset-1"
+                    : "opacity-70 hover:opacity-100"
+                }`}
+              >
+                <Image
+                  src={getImageUrl(url)!}
+                  alt={`View ${index + 1}`}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  return (
+    <div className="border-t border-gray-200">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="accordion-row"
+      >
+        <span className="font-semibold text-sm tracking-wide">{title}</span>
+        {isOpen ? (
+          <ChevronUp className="w-5 h-5 text-gray-500" />
+        ) : (
+          <ChevronDown className="w-5 h-5 text-gray-500" />
+        )}
+      </button>
+      {isOpen && (
+        <div className="pb-4 text-sm text-gray-600 leading-relaxed">{children}</div>
+      )}
+    </div>
+  );
+}
+
+export default function ProductDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const identifier = decodeURIComponent((params.identifier as string) || "");
+  const { addToCart } = useCart();
+
+  const [product, setProduct] = useState<StorefrontProductDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [related, setRelated] = useState<StorefrontProductListItem[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  const [selections, setSelections] = useState<VariantSelections>({});
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [extraFieldSchema, setExtraFieldSchema] = useState<unknown[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    storeApi
+      .getPublic()
+      .then((s) => {
+        if (!cancelled) setExtraFieldSchema(s.extra_field_schema ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setExtraFieldSchema([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    async function fetchProduct() {
+      if (!identifier) {
+        setError("Product not found");
+        setLoading(false);
+        return;
+      }
+      try {
+        setLoading(true);
+        const data = await productApi.getByIdentifier(identifier);
+        setProduct(data);
+        setSelections(defaultSelectionsForProduct(data));
+      } catch (err) {
+        setError("Product not found");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProduct();
+  }, [identifier]);
+
+  const matrix = useMemo(
+    () => (product ? buildMatrixFromVariants(product) : {}),
+    [product]
+  );
+
+  const selectedVariant: StorefrontProductVariant | null = useMemo(() => {
+    if (!product) return null;
+    const variants = product.variants || [];
+    if (variants.length === 0) return null;
+    return findVariantForSelections(variants, selections);
+  }, [product, selections]);
+
+  useEffect(() => {
+    if (!product) return;
+    const fromDetail = product.related_products;
+    if (fromDetail && fromDetail.length > 0) {
+      setRelated(fromDetail);
+      return;
+    }
+    let cancelled = false;
+    setLoadingRelated(true);
+    productApi
+      .getRelated(product.slug)
+      .then((list) => {
+        if (!cancelled) setRelated(list);
+      })
+      .catch(() => {
+        if (!cancelled) setRelated([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingRelated(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [product]);
+
+  const imageUrls = useMemo(
+    () => (product ? galleryImageUrlsForProduct(product) : []),
+    [product]
+  );
+
+  const extraFieldRows = useMemo(
+    () => entriesForExtraData(product?.extra_data, extraFieldSchema),
+    [product?.extra_data, extraFieldSchema]
+  );
+
+  /** Prefer `variants` array — `variant_count` alone is not enough for UI. */
+  const needsVariant = (product?.variants?.length ?? 0) > 0;
+  const variantReady = !needsVariant || selectedVariant !== null;
+
+  const displayPrice = selectedVariant
+    ? parseFloat(selectedVariant.price)
+    : product
+      ? parseFloat(product.price)
+      : 0;
+  const displayOriginal = product?.original_price
+    ? parseFloat(product.original_price)
+    : null;
+  const hasOffer =
+    displayOriginal !== null &&
+    !Number.isNaN(displayOriginal) &&
+    displayOriginal > displayPrice;
+
+  const availableQty = selectedVariant
+    ? selectedVariant.available_quantity
+    : product?.available_quantity ?? 0;
+  const stockStatus = selectedVariant
+    ? selectedVariant.stock_status
+    : product?.stock_status;
+  const isOut =
+    stockStatus === "out_of_stock" || availableQty <= 0;
+  const isLow =
+    !isOut &&
+    (stockStatus === "low_stock" ||
+      stockStatus === "low" ||
+      (availableQty > 0 && availableQty <= 5));
+
+  const setSelection = (attrSlug: string, valuePublicId: string) => {
+    setSelections((prev) => ({ ...prev, [attrSlug]: valuePublicId }));
+  };
+
+  const handleOrder = () => {
+    if (!product || isOut || !variantReady) return;
+    const q = new URLSearchParams({
+      product: product.slug,
+    });
+    if (selectedVariant) q.set("variant", selectedVariant.public_id);
+    router.push(`/order?${q.toString()}`);
+  };
+
+  const handleAddToCart = async () => {
+    if (!product || isOut || !variantReady) return;
+    const snapPrice = selectedVariant?.price ?? product.price;
+    const snapOriginal = product.original_price;
+    await addToCart(
+      product.public_id,
+      1,
+      selectedVariant?.public_id ?? null,
+      {
+        name: product.name,
+        slug: product.slug,
+        image_url: product.image_url,
+        price: snapPrice,
+        original_price: snapOriginal,
+        variant_label: selectedVariant ? variantLabel(selectedVariant) : undefined,
+      }
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-gray-600">{error || "Product not found"}</p>
+        <button
+          type="button"
+          onClick={() => router.push("/products")}
+          className="text-sm underline hover:no-underline"
+        >
+          Continue shopping
+        </button>
+      </div>
+    );
+  }
+
+  const matrixKeys = Object.keys(matrix).sort();
+
+  return (
+    <div className="bg-white min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <nav className="text-xs text-gray-500 mb-6 flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="hover:text-black transition-colors"
+          >
+            Home
+          </button>
+          <span>/</span>
+          <button
+            type="button"
+            onClick={() => router.push("/products")}
+            className="hover:text-black transition-colors"
+          >
+            Products
+          </button>
+          <span>/</span>
+          <span className="text-gray-400 truncate max-w-[200px]">{product.name}</span>
+        </nav>
+
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          <div>
+            <ProductImageGallery
+              imageUrls={imageUrls}
+              productName={product.name}
+              lowStock={isLow}
+            />
+          </div>
+
+          <div className="lg:max-w-md">
+            <p className="text-sm text-gray-500 mb-1 uppercase tracking-wider">
+              {product.category_name || product.brand || "STORE"}
+            </p>
+
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-4 leading-tight">
+              {product.name}
+            </h1>
+
+            <div className="mb-4">
+              {hasOffer ? (
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-lg font-bold text-success">
+                    Now ৳{displayPrice.toFixed(0)}
+                  </span>
+                  <span className="text-sm text-gray-500 line-through">
+                    Was ৳{displayOriginal!.toFixed(0)}
+                  </span>
+                  <span className="text-sm font-medium text-success">
+                    (-{Math.round((1 - displayPrice / displayOriginal!) * 100)}%)
+                  </span>
+                </div>
+              ) : (
+                <span className="text-lg font-bold text-gray-900">
+                  ৳{displayPrice.toFixed(0)}
+                </span>
+              )}
+            </div>
+
+            {needsVariant && matrixKeys.length > 0 && (
+              <div className="space-y-4 mb-5">
+                {matrixKeys.map((slug) => {
+                  const attr = matrix[slug];
+                  return (
+                    <div key={slug}>
+                      <p className="text-sm font-medium text-gray-700 mb-2 uppercase tracking-wider">
+                        {attr.attribute_name}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {attr.values.map((v) => {
+                          const active = selections[slug] === v.value_public_id;
+                          return (
+                            <button
+                              key={v.value_public_id}
+                              type="button"
+                              onClick={() => setSelection(slug, v.value_public_id)}
+                              className={`px-3 py-1.5 text-sm border-2 rounded transition-colors ${
+                                active
+                                  ? "border-black bg-black text-white"
+                                  : "border-gray-200 hover:border-gray-400"
+                              }`}
+                            >
+                              {v.value}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+                {!variantReady && (
+                  <p className="text-sm text-amber-700">Select all options to continue.</p>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <button
+                type="button"
+                onClick={handleOrder}
+                disabled={isOut || !variantReady}
+                className="btn-success"
+              >
+                {isOut ? "OUT OF STOCK" : "ORDER NOW"}
+              </button>
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={isOut || !variantReady}
+                className="btn-outline-primary"
+              >
+                Add to cart
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsWishlisted(!isWishlisted)}
+                disabled
+                className={`w-14 flex items-center justify-center border transition-all ${
+                  isWishlisted
+                    ? "border-red-500 bg-red-50"
+                    : "border-gray-300 hover:border-gray-400"
+                } opacity-50 cursor-not-allowed`}
+                aria-label="Wishlist"
+              >
+                <Heart
+                  className={`w-5 h-5 transition-colors ${
+                    isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {availableQty > 0 && availableQty <= 10 && !isOut && (
+              <p className="text-sm text-orange-600 mb-4">
+                Only {availableQty} left in stock - order soon
+              </p>
+            )}
+
+            <div className="border-b border-gray-200">
+              <CollapsibleSection title="PRODUCT DETAILS" defaultOpen>
+                <p className="mb-3 whitespace-pre-wrap">{product.description}</p>
+              </CollapsibleSection>
+
+              {extraFieldRows.length > 0 && (
+                <CollapsibleSection title="ADDITIONAL INFORMATION" defaultOpen>
+                  <dl className="space-y-2">
+                    {extraFieldRows.map((row) => (
+                      <div key={row.key}>
+                        <dt className="font-medium text-gray-800">{row.label}</dt>
+                        <dd className="text-gray-600 mt-0.5 whitespace-pre-wrap">
+                          {row.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </CollapsibleSection>
+              )}
+
+              <CollapsibleSection title="CARE INSTRUCTIONS">
+                <ul className="space-y-1.5">
+                  <li>• Machine wash at 30°C</li>
+                  <li>• Do not tumble dry</li>
+                  <li>• Iron on low heat</li>
+                </ul>
+              </CollapsibleSection>
+            </div>
+          </div>
+        </div>
+
+        {related.length > 0 && (
+          <div className="mt-16 lg:mt-24">
+            <h2 className="section-heading text-center mb-8">You Might Also Like</h2>
+
+            <div className="overflow-x-auto pb-4 -mx-4 px-4 lg:hidden">
+              <div className="flex gap-4 min-w-max">
+                {related.map((p) => (
+                  <div key={p.public_id} className="w-[160px] flex-shrink-0">
+                    <ProductCard product={p} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden lg:grid lg:grid-cols-4 gap-6">
+              {related.slice(0, 4).map((p) => (
+                <ProductCard key={p.public_id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {loadingRelated && related.length === 0 && (
+          <div className="mt-16 flex justify-center">
+            <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

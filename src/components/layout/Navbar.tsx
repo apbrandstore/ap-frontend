@@ -5,8 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { Search, X, ChevronRight, ChevronDown, ShoppingBag, User, Phone, Plus, Minus, Mail, Menu } from 'lucide-react';
-import { notificationApi, categoryApi, Notification, Category } from '@/lib/api';
+import { notificationApi, categoryApi, type StorefrontNotification, type Category } from '@/lib/api';
 import { SearchDropdown } from '@/components/common/SearchDropdown';
+import { useCart } from '@/contexts/CartContext';
 
 const placeholders = [
   'SEARCH BY NAME',
@@ -16,21 +17,19 @@ const placeholders = [
 export function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { itemCount } = useCart();
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
   const [orderId, setOrderId] = useState('');
-  const [notification, setNotification] = useState<Notification | null>(null);
+  const [notification, setNotification] = useState<StorefrontNotification | null>(null);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
   const [categories, setCategories] = useState<Category[]>([]);
   
-  // Check if we're on the home page
-  const isHomePage = pathname === '/';
-
   useEffect(() => {
     async function fetchNotification() {
-      const activeNotification = await notificationApi.getActive();
+      const activeNotification = await notificationApi.getFirstActive();
       setNotification(activeNotification);
     }
     fetchNotification();
@@ -109,25 +108,42 @@ export function Navbar() {
 
   return (
     <nav className="bg-white sticky top-0 z-50 border-b border-gray-200 overflow-visible">
-      {/* Top info bar - Phone & Email (mobile + desktop) */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="marquee-bar">
-          <a
-            href="tel:+8801862641734"
-            className="flex items-center gap-2 hover:text-black transition-colors"
-          >
-            <Phone className="w-4 h-4 flex-shrink-0" />
-            <span>+8801862641734</span>
-          </a>
-          <a
-            href="mailto:apbrandstore09@gmail.com"
-            className="flex items-center gap-2 hover:text-black transition-colors"
-          >
-            <Mail className="w-4 h-4 flex-shrink-0" />
-            <span>apbrandstore09@gmail.com</span>
-          </a>
+      {/* Top info bar - CTA notification (mobile + desktop) */}
+      {notification && (
+        <div className="bg-black text-white py-2 overflow-hidden relative w-full z-10 border-b border-black">
+          <div className="flex animate-marquee whitespace-nowrap">
+            <div className="flex items-center flex-shrink-0">
+              {Array.from({ length: 100 }).map((_, i) => (
+                <span
+                  key={`first-${i}`}
+                  className="text-xs md:text-sm uppercase font-medium mx-6 inline-block flex-shrink-0"
+                >
+                  {notification.cta_url ? (
+                    <a
+                      href={notification.cta_url}
+                      className="underline-offset-2 hover:underline"
+                    >
+                      {notification.cta_text}
+                    </a>
+                  ) : (
+                    notification.cta_text
+                  )}
+                </span>
+              ))}
+            </div>
+            <div className="flex items-center flex-shrink-0" aria-hidden="true">
+              {Array.from({ length: 100 }).map((_, i) => (
+                <span
+                  key={`second-${i}`}
+                  className="text-xs md:text-sm uppercase font-medium mx-6 inline-block flex-shrink-0"
+                >
+                  {notification.cta_text}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Mobile Header - Hamburger, Logo, Search */}
       <div className="md:hidden relative overflow-visible">
@@ -206,8 +222,8 @@ export function Navbar() {
                 All Products
               </Link>
               {categories.map((category) => (
-                <div key={category.id}>
-                  {category.children.length > 0 ? (
+                <div key={category.public_id}>
+                  {(category.children ?? []).length > 0 ? (
                     <>
                       <div className="flex items-center justify-between px-4 py-3 text-sm">
                         <Link
@@ -233,9 +249,9 @@ export function Navbar() {
                       </div>
                       {expandedCategories[category.slug] && (
                         <div className="bg-gray-50 pl-4 pr-2 py-2 space-y-0.5">
-                          {category.children.map((child) => (
+                          {(category.children ?? []).map((child) => (
                             <Link
-                              key={child.id}
+                              key={child.public_id}
                               href={`/products?category=${child.slug}`}
                               className="nav-drawer-item"
                               onClick={closeHamburger}
@@ -293,9 +309,14 @@ export function Navbar() {
             <div className="relative p-2 opacity-30 cursor-not-allowed pointer-events-none">
               <User className="w-5 h-5 text-black" />
             </div>
-            <div className="relative p-2 opacity-30 cursor-not-allowed pointer-events-none">
+            <Link href="/cart" className="relative p-2 hover:bg-gray-100 rounded transition-colors" aria-label="Cart">
               <ShoppingBag className="w-5 h-5 text-black" />
-            </div>
+              {itemCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 text-[10px] font-bold bg-black text-white rounded-full flex items-center justify-center">
+                  {itemCount > 99 ? "99+" : itemCount}
+                </span>
+              )}
+            </Link>
           </div>
         </div>
       </div>
@@ -315,8 +336,8 @@ export function Navbar() {
               <div className="dropdown-panel">
                 <div className="py-2">
                   {categories.map((category) => (
-                    <div key={category.id}>
-                      {category.children.length > 0 ? (
+                    <div key={category.public_id}>
+                      {(category.children ?? []).length > 0 ? (
                         <>
                           <div className="dropdown-item">
                             <Link
@@ -338,9 +359,9 @@ export function Navbar() {
                           </div>
                           {expandedCategories[category.slug] && (
                             <div className="pl-2">
-                              {category.children.map((child) => (
+                              {(category.children ?? []).map((child) => (
                                 <Link
-                                  key={child.id}
+                                  key={child.public_id}
                                   href={`/products?category=${child.slug}`}
                                   className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 pl-6"
                                 >
@@ -369,30 +390,6 @@ export function Navbar() {
           </div>
         </div>
       </div>
-
-      {/* Notification Bar - Only show on home page */}
-      {notification && isHomePage && (
-        <div className="bg-black text-white py-2 overflow-hidden relative w-full z-10">
-          <div className="flex animate-marquee whitespace-nowrap">
-            {/* First set of marquee items */}
-            <div className="flex items-center flex-shrink-0">
-              {Array.from({ length: 100 }).map((_, i) => (
-                <span key={`first-${i}`} className="text-xs md:text-sm uppercase font-medium mx-6 inline-block flex-shrink-0">
-                  {notification.message}
-                </span>
-              ))}
-            </div>
-            {/* Duplicate set for seamless loop */}
-            <div className="flex items-center flex-shrink-0" aria-hidden="true">
-              {Array.from({ length: 100 }).map((_, i) => (
-                <span key={`second-${i}`} className="text-xs md:text-sm uppercase font-medium mx-6 inline-block flex-shrink-0">
-                  {notification.message}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Search Modal */}
       {isSearchModalOpen && (

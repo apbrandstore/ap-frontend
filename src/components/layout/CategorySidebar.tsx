@@ -59,8 +59,8 @@ export function CategorySidebar() {
         <h2 className="text-lg font-bold text-red-600 mb-4 uppercase">Category</h2>
         <nav className="space-y-1">
           {categories.map((category) => (
-            <div key={category.id}>
-              {category.children.length > 0 ? (
+            <div key={category.public_id}>
+              {(category.children ?? []).length > 0 ? (
                 <>
                   <div className="nav-item">
                     <Link
@@ -85,9 +85,9 @@ export function CategorySidebar() {
                   </div>
                   {expandedCategories[category.slug] && (
                     <div className="pl-2 space-y-1">
-                      {category.children.map((child) => (
+                      {(category.children ?? []).map((child) => (
                         <Link
-                          key={child.id}
+                          key={child.public_id}
                           href={`/products?category=${child.slug}`}
                           className="nav-item-sub flex items-center gap-3"
                         >

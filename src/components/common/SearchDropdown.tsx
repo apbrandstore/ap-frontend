@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { Product, productApi, getImageUrl } from '@/lib/api';
+import { Product, searchApi, getImageUrl } from '@/lib/api';
 
 interface SearchDropdownProps {
   isMobile?: boolean;
@@ -28,24 +28,31 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
   const debounceTimer = useRef<NodeJS.Timeout | undefined>(undefined);
   const [isFocused, setIsFocused] = useState(false);
 
-  // Debounced search function
+  // Debounced search — API returns empty for q shorter than 2 characters
   const performSearch = async (query: string) => {
-    if (!query.trim()) {
+    const q = query.trim();
+    if (!q) {
       setSearchResults([]);
       setShowDropdown(false);
       setHasSearched(false);
       return;
     }
+    if (q.length < 2) {
+      setSearchResults([]);
+      setHasSearched(true);
+      setShowDropdown(true);
+      return;
+    }
 
     setIsLoading(true);
     setHasSearched(true);
-    
+
     try {
-      const results = await productApi.getAll(query.trim());
-      setSearchResults(results);
+      const res = await searchApi.unified(q);
+      setSearchResults(res.products ?? []);
       setShowDropdown(true);
     } catch (error) {
-      console.error('Search error:', error);
+      console.error("Search error:", error);
       setSearchResults([]);
       setShowDropdown(true);
     } finally {
@@ -101,8 +108,8 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
   }, [searchQuery, router, onClose]);
 
   // Handle clicking on a search result
-  const handleResultClick = useCallback((productId: number) => {
-    router.push(`/products/${productId}`);
+  const handleResultClick = useCallback((slug: string) => {
+    router.push(`/products/${encodeURIComponent(slug)}`);
     setShowDropdown(false);
     onClose?.();
   }, [router, onClose]);
@@ -235,6 +242,12 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
               Searching...
             </div>
           </div>
+        ) : hasSearched &&
+          searchQuery.trim().length > 0 &&
+          searchQuery.trim().length < 2 ? (
+          <div className="p-4 text-center text-gray-500">
+            <div className="text-sm">Type at least 2 characters to search</div>
+          </div>
         ) : hasSearched && searchResults.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
             <div className="mb-2">No products found</div>
@@ -245,18 +258,18 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
             <div className="max-h-80 overflow-y-auto">
               {searchResults.slice(0, 8).map((product) => (
                 <button
-                  key={product.id}
+                  key={product.public_id}
                   onMouseDown={(e) => {
                     e.preventDefault(); // Prevent input blur
                   }}
-                  onClick={() => handleResultClick(product.id)}
+                  onClick={() => handleResultClick(product.slug)}
                   className="search-row"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
-                      {getImageUrl(product.image) ? (
+                      {getImageUrl(product.image_url) ? (
                         <Image
-                          src={getImageUrl(product.image)!}
+                          src={getImageUrl(product.image_url)!}
                           alt={product.name}
                           width={48}
                           height={48}
@@ -274,21 +287,23 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
                         {product.name}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {product.category?.name || 'Category'}
+                        {product.category_name || product.category_slug || "Category"}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        {product.has_offer && product.offer_price ? (
+                        {product.original_price &&
+                        parseFloat(product.original_price) >
+                          parseFloat(product.price) ? (
                           <>
                             <span className="text-sm font-bold text-success">
-                              ৳{parseFloat(product.offer_price).toFixed(0)}
+                              ৳{parseFloat(product.price).toFixed(0)}
                             </span>
                             <span className="text-xs text-gray-500 line-through">
-                              ৳{parseFloat(product.regular_price).toFixed(0)}
+                              ৳{parseFloat(product.original_price).toFixed(0)}
                             </span>
                           </>
                         ) : (
                           <span className="text-sm font-bold text-black">
-                            ৳{parseFloat(product.regular_price).toFixed(0)}
+                            ৳{parseFloat(product.price).toFixed(0)}
                           </span>
                         )}
                       </div>

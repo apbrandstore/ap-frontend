@@ -1,219 +1,349 @@
-import axios from 'axios';
+import axios from "axios";
+import {
+  STOREFRONT_API_ORIGIN,
+  storefrontPublishableKeyPublic,
+  storefrontV1Url,
+} from "@/lib/storefront-config";
+import { normalizeStorefrontProductDetail } from "@/lib/product-detail-normalize";
+import { normalizePricingBreakdownResponse } from "@/lib/pricing-normalize";
 import type {
-  Category,
-  CategoryChild,
-  Product,
-  ProductCategory,
-  ProductColor,
-  BestSelling,
-  Hot,
-  Notification,
-  TrackingCode,
-  SiteSettings,
-  HomepageData,
-  CreateOrderData,
-  CreateOrderProductItem,
-  CreateMultiProductOrderData,
-  CreateSingleProductOrderData,
-  Order,
-  Cart,
-  CartItem,
-  AddToCartData,
-  UpdateCartItemData,
-} from '@/types/api';
+  StorePublic,
+  StorefrontProductListItem,
+  StorefrontProductDetail,
+  StorefrontCategory,
+  PublicBanner,
+  BannerPlacementSlot,
+  StorefrontNotification,
+  UnifiedSearchResponse,
+  CatalogFiltersPayload,
+  ShippingZone,
+  ShippingOption,
+  PricingBreakdownResponse,
+  PricingBreakdownRequestItem,
+  PricingPreviewRequest,
+  PricingPreviewResponse,
+  ShippingPreviewRequest,
+  ShippingPreviewResponse,
+  OrderCreatePayload,
+  OrderReceipt,
+} from "@/types/api";
 
 export type {
+  StorePublic,
+  StorefrontProductListItem,
+  StorefrontProductDetail,
+  StorefrontCategory,
+  PublicBanner,
+  StorefrontNotification,
+  UnifiedSearchResponse,
+  CatalogFiltersPayload,
+  ShippingZone,
+  ShippingOption,
+  PricingBreakdownResponse,
+  PricingBreakdownRequestItem,
+  PricingPreviewRequest,
+  PricingPreviewResponse,
+  ShippingPreviewRequest,
+  ShippingPreviewResponse,
+  OrderCreatePayload,
+  OrderReceipt,
+  Product,
   Category,
   CategoryChild,
-  Product,
-  ProductCategory,
-  ProductColor,
-  BestSelling,
-  Hot,
-  Notification,
-  TrackingCode,
-  SiteSettings,
-  HomepageData,
-  CreateOrderData,
-  CreateOrderProductItem,
-  CreateMultiProductOrderData,
-  CreateSingleProductOrderData,
-  Order,
-  Cart,
-  CartItem,
-  AddToCartData,
-  UpdateCartItemData,
-} from '@/types/api';
+  HomepageDerived,
+  CartLine,
+} from "@/types/api";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+/**
+ * Browser: call same-origin `/api/v1/…` so the server can attach Authorization
+ * (proxy adds auth via NEXT_PUBLIC_PUBLISHABLE_KEY or STOREFRONT_PUBLISHABLE_KEY).
+ * Non-browser (rare): direct to backend with public key if set.
+ */
+const useStorefrontProxy =
+  typeof window !== "undefined" && typeof STOREFRONT_API_ORIGIN === "string"
+    ? STOREFRONT_API_ORIGIN.length > 0
+    : false;
 
-// Function to get CSRF token from cookies
-function getCsrfToken() {
-  if (typeof document === 'undefined') return null;
-  const name = 'csrftoken';
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-  return null;
+/**
+ * Full request URL for the storefront API. Uses `baseURL: ""` on the axios instance
+ * so we never rely on axios `combineURLs`, which can drop the final `/` before `?`
+ * (Django APPEND_SLASH / POST body issues).
+ *
+ * @param fragment Path under `/api/v1` (e.g. `/products/` or `/products/foo/`)
+ */
+function v1RequestUrl(fragment: string): string {
+  let p = fragment.trim();
+  if (!p.startsWith("/")) p = `/${p}`;
+  if (p.length > 1 && !p.endsWith("/")) p = `${p}/`;
+  const rel = `/api/v1${p}`;
+  if (useStorefrontProxy || !STOREFRONT_API_ORIGIN) return rel;
+  return `${STOREFRONT_API_ORIGIN}${rel}`;
 }
 
-// Create axios instance with default config
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true, // Important for session cookies
+  baseURL: "",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
+    ...(!useStorefrontProxy && storefrontPublishableKeyPublic()
+      ? { Authorization: `Bearer ${storefrontPublishableKeyPublic()}` }
+      : {}),
   },
 });
 
-// Add CSRF token to all requests
-api.interceptors.request.use((config) => {
-  const csrfToken = getCsrfToken();
-  if (csrfToken) {
-    config.headers['X-CSRFToken'] = csrfToken;
-  }
-  return config;
-});
-
-// Helper function to convert relative image URLs to absolute URLs
 export function getImageUrl(imageUrl: string | null): string | null {
   if (!imageUrl) return null;
-  
-  // If already an absolute URL, return as is
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
     return imageUrl;
   }
-  
-  // If relative URL, prepend API base URL
-  // Remove leading slash if present to avoid double slashes
-  const cleanUrl = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
-  return `${API_BASE_URL}${cleanUrl}`;
+  const cleanUrl = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+  return `${STOREFRONT_API_ORIGIN}${cleanUrl}`;
 }
 
-// API Functions - Read-only product endpoints
+export function productDetailPath(identifier: string): string {
+  return `/products/${encodeURIComponent(identifier)}/`;
+}
+
 export const productApi = {
-  getAll: async (search?: string, category?: string): Promise<Product[]> => {
-    const params: Record<string, string> = {};
-    if (search) params.search = search;
-    if (category) params.category = category;
-    const response = await api.get('/api/products/', { params });
-    return response.data.results || response.data;
+  getPage: async (params?: Record<string, string | number | undefined>) => {
+    const response = await api.get<{
+      count: number;
+      next: string | null;
+      previous: string | null;
+      results: StorefrontProductListItem[];
+    }>(v1RequestUrl("/products/"), {
+      params: Object.fromEntries(
+        Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== "")
+      ) as Record<string, string>,
+    });
+    return response.data;
   },
 
-  getById: async (id: number): Promise<Product> => {
-    const response = await api.get(`/api/products/${id}/`);
-    return response.data;
+  getAll: async (
+    search?: string,
+    category?: string,
+    ordering?: string
+  ): Promise<StorefrontProductListItem[]> => {
+    const data = await productApi.getPage({
+      search: search || undefined,
+      category: category || undefined,
+      ordering: ordering || undefined,
+      sort: ordering || undefined,
+      page: 1,
+    });
+    return data.results ?? [];
+  },
+
+  getByIdentifier: async (
+    identifier: string
+  ): Promise<StorefrontProductDetail> => {
+    const response = await api.get<unknown>(
+      v1RequestUrl(`/products/${encodeURIComponent(identifier)}/`)
+    );
+    return normalizeStorefrontProductDetail(response.data);
+  },
+
+  getRelated: async (
+    identifier: string
+  ): Promise<StorefrontProductListItem[]> => {
+    const response = await api.get<StorefrontProductListItem[]>(
+      v1RequestUrl(`/products/${encodeURIComponent(identifier)}/related/`)
+    );
+    return Array.isArray(response.data) ? response.data : [];
+  },
+
+  searchByQuery: async (q: string): Promise<StorefrontProductListItem[]> => {
+    if (!q.trim() || q.trim().length < 2) return [];
+    const response = await api.get<{ results?: StorefrontProductListItem[] }>(
+      v1RequestUrl("/products/search/"),
+      { params: { q: q.trim() } }
+    );
+    const d = response.data;
+    return d.results ?? (Array.isArray(d) ? d : []);
   },
 };
 
-// API Functions - Categories
+/** In-memory tree for the SPA session; avoids hammering `/categories/` (rate limits + Strict Mode double-mount). */
+let categoryTreeCache: StorefrontCategory[] | undefined;
+let categoryTreeInflight: Promise<StorefrontCategory[]> | null = null;
+
 export const categoryApi = {
-  getTree: async (): Promise<Category[]> => {
-    const response = await api.get('/api/categories/tree/');
-    return response.data;
+  getTree: async (): Promise<StorefrontCategory[]> => {
+    if (categoryTreeCache !== undefined) return categoryTreeCache;
+    if (categoryTreeInflight) return categoryTreeInflight;
+
+    categoryTreeInflight = (async () => {
+      try {
+        const response = await api.get<StorefrontCategory[]>(v1RequestUrl("/categories/"), {
+          params: { tree: 1 },
+        });
+        const data = Array.isArray(response.data) ? response.data : [];
+        categoryTreeCache = data;
+        return data;
+      } finally {
+        categoryTreeInflight = null;
+      }
+    })();
+
+    return categoryTreeInflight;
   },
 
-  getBySlug: async (slug: string): Promise<Category> => {
-    const response = await api.get(`/api/categories/${encodeURIComponent(slug)}/`);
-    return response.data;
-  },
-};
-
-// API Functions - Best Selling products
-export const bestSellingApi = {
-  getAll: async (): Promise<BestSelling[]> => {
-    const response = await api.get('/api/best-selling/');
-    return response.data.results || response.data;
-  },
-};
-
-// API Functions - Hot products (homepage Hot section)
-export const hotApi = {
-  getAll: async (): Promise<Hot[]> => {
-    const response = await api.get('/api/hot/');
-    return response.data.results || response.data;
-  },
-};
-
-// Homepage: single request for products + best_selling + hot (faster than 3 parallel calls)
-export const homepageApi = {
-  getData: async (): Promise<HomepageData> => {
-    const response = await api.get<HomepageData>('/api/homepage/');
+  getBySlug: async (slug: string): Promise<StorefrontCategory> => {
+    const response = await api.get<StorefrontCategory>(
+      v1RequestUrl(`/categories/${encodeURIComponent(slug)}/`)
+    );
     return response.data;
   },
 };
 
-// API Functions - Notifications
+export const storeApi = {
+  getPublic: async (): Promise<StorePublic> => {
+    const response = await api.get<StorePublic>(v1RequestUrl("/store/public/"));
+    return response.data;
+  },
+};
+
+export const bannerApi = {
+  getAll: async (): Promise<PublicBanner[]> => {
+    const response = await api.get<PublicBanner[] | { results?: PublicBanner[] }>(
+      v1RequestUrl("/banners/")
+    );
+    const d = response.data;
+    if (Array.isArray(d)) return d;
+    return d?.results ?? [];
+  },
+
+  /** Optional `slot` filter per `GET /banners/?slot=` */
+  getForSlot: async (slot: BannerPlacementSlot): Promise<PublicBanner[]> => {
+    const response = await api.get<PublicBanner[] | { results?: PublicBanner[] }>(
+      v1RequestUrl("/banners/"),
+      { params: { slot } }
+    );
+    const d = response.data;
+    if (Array.isArray(d)) return d;
+    return d?.results ?? [];
+  },
+};
+
+export const searchApi = {
+  unified: async (q?: string, trending?: boolean): Promise<UnifiedSearchResponse> => {
+    const params: Record<string, string> = {};
+    if (trending) params.trending = "1";
+    else if (q?.trim()) params.q = q.trim();
+    const response = await api.get<UnifiedSearchResponse>(v1RequestUrl("/search/"), {
+      params,
+    });
+    return response.data;
+  },
+};
+
+export const catalogApi = {
+  getFilters: async (): Promise<CatalogFiltersPayload> => {
+    const response = await api.get<CatalogFiltersPayload>(v1RequestUrl("/catalog/filters/"));
+    return response.data;
+  },
+};
+
 export const notificationApi = {
-  getActive: async (): Promise<Notification | null> => {
+  getActive: async (): Promise<StorefrontNotification[]> => {
     try {
-      const response = await api.get('/api/notifications/active/');
-      return response.data.is_active ? response.data : null;
-    } catch (error) {
-      console.error('Error fetching notification:', error);
-      return null;
-    }
-  },
-};
-
-// API Functions - Tracking Codes
-export const trackingCodeApi = {
-  getActive: async (): Promise<TrackingCode[]> => {
-    try {
-      const response = await api.get('/api/tracking-codes/active/');
-      return response.data || [];
-    } catch (error) {
-      console.error('Error fetching tracking codes:', error);
+      const response = await api.get<
+        | StorefrontNotification[]
+        | { results?: StorefrontNotification[] }
+        | StorefrontNotification
+      >(v1RequestUrl("/notifications/active/"));
+      const d = response.data;
+      let list: StorefrontNotification[] = [];
+      if (Array.isArray(d)) list = d;
+      else if (d && typeof d === "object" && "results" in d && Array.isArray(d.results))
+        list = d.results;
+      else if (d && typeof d === "object" && "public_id" in d)
+        list = [d as StorefrontNotification];
+      return list
+        .filter((n) => n.is_currently_active === true)
+        .sort((a, b) => a.order - b.order);
+    } catch {
       return [];
     }
   },
-};
 
-// API Functions - Site Settings
-export const siteSettingsApi = {
-  get: async (): Promise<SiteSettings> => {
-    const response = await api.get<SiteSettings>('/api/site-settings/');
-    return response.data;
+  getFirstActive: async (): Promise<StorefrontNotification | null> => {
+    const list = await notificationApi.getActive();
+    return list[0] ?? null;
   },
 };
 
-// API Functions - Cart
-export const cartApi = {
-  get: async (): Promise<Cart> => {
-    const response = await api.get('/api/cart/');
-    return response.data;
+let shippingZonesCache: ShippingZone[] | undefined;
+let shippingZonesInflight: Promise<ShippingZone[]> | null = null;
+
+export const shippingApi = {
+  getZones: async (): Promise<ShippingZone[]> => {
+    if (shippingZonesCache !== undefined) return shippingZonesCache;
+    if (shippingZonesInflight) return shippingZonesInflight;
+
+    shippingZonesInflight = (async () => {
+      try {
+        const response = await api.get<ShippingZone[]>(v1RequestUrl("/shipping/zones/"));
+        const data = Array.isArray(response.data) ? response.data : [];
+        shippingZonesCache = data;
+        return data;
+      } finally {
+        shippingZonesInflight = null;
+      }
+    })();
+
+    return shippingZonesInflight;
   },
 
-  add: async (data: AddToCartData): Promise<Cart> => {
-    const response = await api.post('/api/cart/add/', data);
-    return response.data;
+  getOptions: async (
+    zonePublicId: string,
+    orderTotal?: string
+  ): Promise<ShippingOption[]> => {
+    const response = await api.get<ShippingOption[]>(v1RequestUrl("/shipping/options/"), {
+      params: {
+        zone_public_id: zonePublicId,
+        ...(orderTotal !== undefined ? { order_total: orderTotal } : {}),
+      },
+    });
+    return Array.isArray(response.data) ? response.data : [];
   },
 
-  updateItem: async (itemId: number, data: UpdateCartItemData): Promise<Cart> => {
-    const response = await api.put(`/api/cart/items/${itemId}/`, data);
+  preview: async (
+    body: ShippingPreviewRequest
+  ): Promise<ShippingPreviewResponse> => {
+    const response = await api.post<ShippingPreviewResponse>(
+      v1RequestUrl("/shipping/preview/"),
+      body
+    );
     return response.data;
-  },
-
-  removeItem: async (itemId: number): Promise<Cart> => {
-    const response = await api.delete(`/api/cart/items/${itemId}/remove/`);
-    return response.data;
-  },
-
-  clear: async (): Promise<void> => {
-    await api.delete('/api/cart/');
   },
 };
 
-// API Functions - Orders
+export const pricingApi = {
+  breakdown: async (body: {
+    items: PricingBreakdownRequestItem[];
+    shipping_zone_public_id?: string;
+    shipping_method_public_id?: string;
+  }): Promise<PricingBreakdownResponse> => {
+    const response = await api.post<unknown>(v1RequestUrl("/pricing/breakdown/"), body);
+    return normalizePricingBreakdownResponse(response.data);
+  },
+
+  preview: async (body: PricingPreviewRequest): Promise<PricingPreviewResponse> => {
+    const response = await api.post<unknown>(v1RequestUrl("/pricing/preview/"), body);
+    return normalizePricingBreakdownResponse(response.data);
+  },
+};
+
 export const orderApi = {
-  create: async (data: CreateOrderData): Promise<Order> => {
-    const response = await api.post('/api/orders/create/', data);
-    return response.data;
+  initiateCheckout: async (): Promise<void> => {
+    await api.post(v1RequestUrl("/orders/initiate-checkout/"), {});
   },
 
-  createSingleProduct: async (data: CreateSingleProductOrderData): Promise<Order> => {
-    const response = await api.post('/api/orders/create/', data);
+  create: async (data: OrderCreatePayload): Promise<OrderReceipt> => {
+    const response = await api.post<OrderReceipt>(v1RequestUrl("/orders/"), data);
     return response.data;
   },
 };
 
+/** For modules that need raw URL (e.g. tests) */
+export { storefrontV1Url };

@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import { Funnel_Sans, Space_Grotesk } from "next/font/google";
-import { Suspense } from "react";
-import Script from "next/script";
 import "@/styles/globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { fetchStorePublic } from "@/lib/server-api";
 import { CartProvider } from "@/contexts/CartContext";
-import { CsrfInitializer } from "@/components/common/CsrfInitializer";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
 import { TrackingScripts } from "@/components/common/TrackingScripts";
@@ -36,11 +34,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+/** Layout must run per-request so store contact/footer data is not frozen at build time. */
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const storePublic = await fetchStorePublic();
+
   return (
     <html lang="en">
       <body
@@ -48,16 +51,13 @@ export default function RootLayout({
       >
         {/* Dynamic Tracking Codes from Django Admin */}
         <TrackingScripts />
-        <CsrfInitializer />
         <CartProvider>
-          <Suspense fallback={null}>
-            <LoadingScreen />
-          </Suspense>
+          <LoadingScreen />
           <Navbar />
           <main className="min-h-screen">
             {children}
           </main>
-          <Footer />
+          <Footer storePublic={storePublic} />
           <MobileNavigation />
         </CartProvider>
       </body>

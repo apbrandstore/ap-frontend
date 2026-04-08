@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
+/** Route transition overlay; pathname-only to avoid root-layout hydration issues with `useSearchParams`. */
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const isFirstMount = useRef(true);
 
   useEffect(() => {
@@ -18,14 +18,14 @@ export function LoadingScreen() {
 
     // Show loading when route changes
     setIsLoading(true);
-    
+
     // Hide loading after page transition completes
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   if (!isLoading) return null;
 

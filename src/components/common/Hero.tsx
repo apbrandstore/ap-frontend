@@ -1,49 +1,40 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { siteSettingsApi, getImageUrl } from '@/lib/api';
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import { bannerApi, getImageUrl } from "@/lib/api";
+import { firstHeroImageUrlForSlot } from "@/lib/banner-utils";
 
 export function Hero({ initialHeroSrc }: { initialHeroSrc?: string }) {
-  const [heroSrc, setHeroSrc] = useState<string | null>(initialHeroSrc ?? null);
+  const [heroSrc, setHeroSrc] = useState<string | null>(() =>
+    getImageUrl(initialHeroSrc ?? null)
+  );
 
   useEffect(() => {
-    siteSettingsApi.get().then((settings) => {
-      const url = settings.hero_image ? getImageUrl(settings.hero_image) : null;
+    (async () => {
+      let banners = await bannerApi.getForSlot("home_top");
+      if (banners.length === 0) banners = await bannerApi.getAll();
+      const raw = firstHeroImageUrlForSlot(banners, "home_top");
+      const url = raw ? getImageUrl(raw) : null;
       if (url) setHeroSrc(url);
-    }).catch(() => {});
+    })().catch(() => {});
   }, []);
 
   return (
     <section className="relative w-full bg-white overflow-hidden">
-      {/* Main Banner - full image visible, no cropping; container matches typical hero aspect */}
       <div className="relative w-full min-h-[200px] aspect-[16/9] md:aspect-[21/9] lg:aspect-[3/1]">
-        {/* Hero image - fully visible, no crop; any letterboxing is white (section bg) */}
         {heroSrc ? (
           <Image
             src={heroSrc}
-            alt="AP Brand hero"
+            alt="Store hero"
             fill
             priority
-            quality={92}
             sizes="100vw"
-            className="object-contain"
+            className="object-contain object-top"
+            unoptimized
           />
         ) : null}
-        
-        {/* Shop Now Button - Center Bottom - Mobile Only */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10 md:hidden">
-          <Link
-            href="/products"
-            className="btn-primary font-heading tracking-wide hover:opacity-90"
-          >
-            Shop Now
-          </Link>
-        </div>
       </div>
     </section>
   );
 }
-
-

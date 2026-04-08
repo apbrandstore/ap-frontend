@@ -1,17 +1,23 @@
 import type { Metadata } from "next";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+import {
+  storefrontAuthHeaders,
+  storefrontV1Url,
+} from "@/lib/storefront-config";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ identifier: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { identifier } = await params;
   try {
-    const res = await fetch(`${API_BASE}/api/products/${id}/`, {
-      next: { revalidate: 60 },
-    });
+    const res = await fetch(
+      storefrontV1Url(`/products/${encodeURIComponent(identifier)}/`),
+      {
+        next: { revalidate: 60 },
+        headers: storefrontAuthHeaders(),
+      }
+    );
     if (!res.ok) return { title: "Product | AP Brand Store" };
     const product = await res.json();
     const name = product?.name ?? "Product";
