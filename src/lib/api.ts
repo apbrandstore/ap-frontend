@@ -56,7 +56,7 @@ export type {
 
 /**
  * Browser: call same-origin `/api/v1/…` so the server can attach Authorization
- * (proxy adds auth via NEXT_PUBLIC_PUBLISHABLE_KEY or STOREFRONT_PUBLISHABLE_KEY).
+ * (proxy adds auth via NEXT_PUBLIC_PUBLISHABLE_KEY).
  * Non-browser (rare): direct to backend with public key if set.
  */
 const useStorefrontProxy =

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   STOREFRONT_API_ORIGIN,
   ensurePathnameTrailingSlash,
-  storefrontPublishableKeyServer,
+  storefrontPublishableKeyPublic,
 } from "@/lib/storefront-config";
 
 function upstreamBase(): string | null {
@@ -12,7 +12,7 @@ function upstreamBase(): string | null {
 
 async function proxyRequest(req: NextRequest, pathSegments: string[]) {
   const origin = upstreamBase();
-  const key = storefrontPublishableKeyServer();
+  const key = storefrontPublishableKeyPublic();
   if (!origin) {
     return NextResponse.json(
       { detail: "NEXT_PUBLIC_API_URL is not configured." },
@@ -23,7 +23,7 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
     return NextResponse.json(
       {
         detail:
-          "Storefront API key missing. Set NEXT_PUBLIC_PUBLISHABLE_KEY (or optional STOREFRONT_PUBLISHABLE_KEY on the server).",
+          "Storefront API key missing. Set NEXT_PUBLIC_PUBLISHABLE_KEY.",
       },
       { status: 503 }
     );

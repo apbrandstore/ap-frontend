@@ -7,7 +7,6 @@ import { fetchStorePublic } from "@/lib/server-api";
 import { CartProvider } from "@/contexts/CartContext";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
-import { TrackingScripts } from "@/components/common/TrackingScripts";
 
 const funnelSans = Funnel_Sans({
   variable: "--font-funnel-sans",
@@ -49,8 +48,6 @@ export default async function RootLayout({
       <body
         className={`${funnelSans.variable} ${spaceGrotesk.variable} antialiased`}
       >
-        {/* Dynamic Tracking Codes from Django Admin */}
-        <TrackingScripts />
         <CartProvider>
           <LoadingScreen />
           <Navbar />

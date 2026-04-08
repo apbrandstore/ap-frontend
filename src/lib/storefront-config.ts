@@ -1,4 +1,4 @@
-/** Shared Akkho storefront API origin and auth (browser + server). */
+/** Shared storefront API origin and auth (browser + server). */
 
 export const STOREFRONT_API_ORIGIN =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
@@ -7,16 +7,6 @@ export const STOREFRONT_API_ORIGIN =
 export function storefrontPublishableKeyPublic(): string {
   return process.env.NEXT_PUBLIC_PUBLISHABLE_KEY || "";
 }
-
-/**
- * For API route proxy / server `fetch`: optional server-only override, else same as public.
- */
-export function storefrontPublishableKeyServer(): string {
-  return process.env.STOREFRONT_PUBLISHABLE_KEY || storefrontPublishableKeyPublic();
-}
-
-/** @deprecated Use storefrontPublishableKeyPublic() */
-export const STOREFRONT_PUBLISHABLE_KEY = storefrontPublishableKeyPublic();
 
 /**
  * Django uses trailing slashes on routes (APPEND_SLASH). Ensures `pathname` ends with `/`.
@@ -47,7 +37,7 @@ export function storefrontV1Url(path: string): string {
 
 export function storefrontAuthHeaders(): Record<string, string> {
   const h: Record<string, string> = { "Content-Type": "application/json" };
-  const key = storefrontPublishableKeyServer();
+  const key = storefrontPublishableKeyPublic();
   if (key) {
     h.Authorization = `Bearer ${key}`;
   }

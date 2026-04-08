@@ -279,24 +279,9 @@ function firePurchaseEvent(
   totalPrice: number,
   productPublicIds: string[]
 ) {
-  if (typeof window === "undefined" || !window.fbq) return;
-
-  const storageKey = `fb_purchase_fired_${orderRef}`;
-  if (sessionStorage.getItem(storageKey)) return;
-
-  window.fbq(
-    "track",
-    "Purchase",
-    {
-      value: totalPrice,
-      currency: "BDT",
-      content_type: "product",
-      content_ids: productPublicIds,
-    },
-    { eventID: `order_${orderRef}` }
-  );
-
-  sessionStorage.setItem(storageKey, "1");
+  void orderRef;
+  void totalPrice;
+  void productPublicIds;
 }
 
 function OrderPageContent() {

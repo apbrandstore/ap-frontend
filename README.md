@@ -1,6 +1,6 @@
 # AP Brand Store Frontend
 
-Next.js frontend for the AP Brand Store e-commerce platform built with React, TypeScript, Tailwind CSS, and shadcn/ui.
+Next.js storefront frontend built with React, TypeScript, Tailwind CSS, and shadcn/ui.
 
 ## Features
 
@@ -32,7 +32,7 @@ Next.js frontend for the AP Brand Store e-commerce platform built with React, Ty
 1. Clone the repository:
 ```bash
 git clone <your-frontend-repo-url>
-cd genzzone-frontend
+cd ap-frontend
 ```
 
 2. Install dependencies:
@@ -43,11 +43,13 @@ npm install
 3. Create a `.env.local` file:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_PUBLISHABLE_KEY=ak_pk_...
 ```
 
-For production, set this to your Railway backend URL:
+For production, set `NEXT_PUBLIC_API_URL` to your backend origin:
 ```env
 NEXT_PUBLIC_API_URL=https://your-backend.railway.app
+NEXT_PUBLIC_PUBLISHABLE_KEY=ak_pk_...
 ```
 
 4. Run the development server:
@@ -60,13 +62,13 @@ The frontend will be available at `http://localhost:3000`
 ## Project Structure
 
 ```
-genzzone-frontend/
+ap-frontend/
 ├── app/                    # Next.js app directory
 │   ├── page.tsx           # Home page
 │   ├── layout.tsx         # Root layout
 │   ├── globals.css        # Global styles
 │   ├── products/          # Products pages
-│   │   ├── [id]/         # Product detail page
+│   │   ├── [identifier]/  # Product detail page
 │   │   └── page.tsx      # Products listing
 │   ├── cart/             # Shopping cart
 │   │   └── page.tsx      # Cart page
@@ -87,14 +89,14 @@ genzzone-frontend/
 
 ## API Integration
 
-The storefront uses the **Akkho Storefront API** (`/api/v1/…`) with a **publishable** key (`ak_pk_…`). See [`docs/AKKHO_STOREFRONT_API.md`](docs/AKKHO_STOREFRONT_API.md).
+The storefront uses the **Paperbase Storefront API** (`/api/v1/…`) with a **publishable** key (`ak_pk_…`).
 
 - **Store / branding**: `GET /api/v1/store/public/`, `GET /api/v1/banners/`
 - **Catalog**: `GET /api/v1/products/`, `GET /api/v1/products/{slug-or-prd_id}/`, categories, search, catalog filters
 - **Cart**: client-side only (localStorage); totals via `POST /api/v1/pricing/breakdown/`
 - **Checkout**: `GET /api/v1/shipping/zones/`, `GET /api/v1/shipping/options/`, `POST /api/v1/orders/`
 
-Do not put **secret** keys (`ak_sk_…`) in the browser. Optional: set `NEXT_PUBLIC_FACEBOOK_PIXEL_ID` for Meta Pixel (replacing server-fetched tracking codes).
+Do not put **secret** keys (`ak_sk_…`) in the browser.
 
 ## Deployment to Vercel
 
@@ -103,9 +105,8 @@ Do not put **secret** keys (`ak_sk_…`) in the browser. Optional: set `NEXT_PUB
 3. In Vercel project settings:
    - Set **Root Directory** to `/` (or leave empty)
    - Add environment variables:
-     - `NEXT_PUBLIC_API_URL` = `https://your-akkho-api-host` (origin only, no path)
-     - `NEXT_PUBLIC_AKKHO_PUBLISHABLE_KEY` = `ak_pk_…`
-     - Optional: `NEXT_PUBLIC_FACEBOOK_PIXEL_ID` for Meta Pixel
+     - `NEXT_PUBLIC_API_URL` = `https://your-backend-origin` (origin only, no `/api/v1`)
+     - `NEXT_PUBLIC_PUBLISHABLE_KEY` = `ak_pk_…` (publishable key)
 4. Deploy!
 
 Vercel will automatically:
@@ -118,9 +119,8 @@ Vercel will automatically:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `NEXT_PUBLIC_API_URL` | Akkho API origin (e.g. `https://api.example.com`) | Yes |
-| `NEXT_PUBLIC_AKKHO_PUBLISHABLE_KEY` | Storefront publishable key (`ak_pk_…`) | Yes |
-| `NEXT_PUBLIC_FACEBOOK_PIXEL_ID` | Meta Pixel ID (optional) | No |
+| `NEXT_PUBLIC_API_URL` | Backend API origin (e.g. `https://api.example.com`) | Yes |
+| `NEXT_PUBLIC_PUBLISHABLE_KEY` | Storefront publishable key (`ak_pk_…`) | Yes |
 
 ## Development
 
