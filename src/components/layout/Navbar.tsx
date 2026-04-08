@@ -64,6 +64,93 @@ export function Navbar() {
     }));
   };
 
+  const MAX_CATEGORY_DEPTH = 5;
+
+  const renderMobileCategory = (category: Category, depth: number) => {
+    if (depth > MAX_CATEGORY_DEPTH) return null;
+    const hasChildren = (category.children ?? []).length > 0;
+    const isExpanded = Boolean(expandedCategories[category.slug]);
+    const paddingLeft = 16 + depth * 12; // px
+
+    return (
+      <div key={category.public_id}>
+        <div className="flex items-center justify-between py-3 text-sm" style={{ paddingLeft, paddingRight: 16 }}>
+          <Link
+            href={`/products?category=${category.slug}`}
+            className={`flex-1 ${depth === 0 ? "font-medium" : ""} text-black/80 hover:text-black`}
+            onClick={closeHamburger}
+          >
+            {category.name}
+          </Link>
+          {hasChildren ? (
+            <button
+              type="button"
+              onClick={(e) => toggleCategoryExpansion(category.slug, e)}
+              className="p-2 -m-2 text-gray-500 hover:bg-gray-100 rounded"
+              aria-expanded={isExpanded}
+              aria-label={isExpanded ? `Collapse ${category.name}` : `Expand ${category.name}`}
+            >
+              {isExpanded ? (
+                <Minus className="w-4 h-4" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+            </button>
+          ) : null}
+        </div>
+
+        {hasChildren && isExpanded ? (
+          <div className="bg-gray-50 py-1 space-y-0.5">
+            {(category.children ?? []).map((child) =>
+              renderMobileCategory(child as Category, depth + 1)
+            )}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderDesktopCategory = (category: Category, depth: number) => {
+    if (depth > MAX_CATEGORY_DEPTH) return null;
+    const hasChildren = (category.children ?? []).length > 0;
+    const isExpanded = Boolean(expandedCategories[category.slug]);
+    const paddingLeft = 16 + depth * 12; // px
+
+    return (
+      <div key={category.public_id}>
+        <div className="dropdown-item" style={{ paddingLeft }}>
+          <Link
+            href={`/products?category=${category.slug}`}
+            className={`flex-1 ${depth === 0 ? "text-black" : "text-gray-700"} hover:text-black`}
+          >
+            {category.name}
+          </Link>
+          {hasChildren ? (
+            <button
+              onClick={(e) => toggleCategoryExpansion(category.slug, e)}
+              className="p-1 hover:bg-gray-200 rounded"
+              aria-expanded={isExpanded}
+              aria-label={isExpanded ? `Collapse ${category.name}` : `Expand ${category.name}`}
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+          ) : null}
+        </div>
+        {hasChildren && isExpanded ? (
+          <div className="py-0.5">
+            {(category.children ?? []).map((child) =>
+              renderDesktopCategory(child as Category, depth + 1)
+            )}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
   const openTrackingModal = () => {
     setIsTrackingModalOpen(true);
   };
@@ -221,58 +308,7 @@ export function Navbar() {
               >
                 All Products
               </Link>
-              {categories.map((category) => (
-                <div key={category.public_id}>
-                  {(category.children ?? []).length > 0 ? (
-                    <>
-                      <div className="flex items-center justify-between px-4 py-3 text-sm">
-                        <Link
-                          href={`/products?category=${category.slug}`}
-                          className="flex-1 font-medium text-black/80 hover:text-black"
-                          onClick={closeHamburger}
-                        >
-                          {category.name}
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={(e) => toggleCategoryExpansion(category.slug, e)}
-                          className="p-2 -m-2 text-gray-500 hover:bg-gray-100 rounded"
-                          aria-expanded={expandedCategories[category.slug]}
-                          aria-label={expandedCategories[category.slug] ? `Collapse ${category.name}` : `Expand ${category.name}`}
-                        >
-                          {expandedCategories[category.slug] ? (
-                            <Minus className="w-4 h-4" />
-                          ) : (
-                            <Plus className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                      {expandedCategories[category.slug] && (
-                        <div className="bg-gray-50 pl-4 pr-2 py-2 space-y-0.5">
-                          {(category.children ?? []).map((child) => (
-                            <Link
-                              key={child.public_id}
-                              href={`/products?category=${child.slug}`}
-                              className="nav-drawer-item"
-                              onClick={closeHamburger}
-                            >
-                              {child.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <Link
-                      href={`/products?category=${category.slug}`}
-                      className="block px-4 py-3 text-sm font-medium text-black/80 hover:text-black hover:bg-gray-100"
-                      onClick={closeHamburger}
-                    >
-                      {category.name}
-                    </Link>
-                  )}
-                </div>
-              ))}
+              {categories.map((category) => renderMobileCategory(category, 0))}
             </div>
           </div>
         </>
@@ -335,52 +371,7 @@ export function Navbar() {
               {/* Dropdown Menu */}
               <div className="dropdown-panel">
                 <div className="py-2">
-                  {categories.map((category) => (
-                    <div key={category.public_id}>
-                      {(category.children ?? []).length > 0 ? (
-                        <>
-                          <div className="dropdown-item">
-                            <Link
-                              href={`/products?category=${category.slug}`}
-                              className="flex-1 text-black"
-                            >
-                              {category.name}
-                            </Link>
-                            <button
-                              onClick={(e) => toggleCategoryExpansion(category.slug, e)}
-                              className="p-1 hover:bg-gray-200 rounded"
-                            >
-                              {expandedCategories[category.slug] ? (
-                                <ChevronDown className="w-4 h-4" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
-                          {expandedCategories[category.slug] && (
-                            <div className="pl-2">
-                              {(category.children ?? []).map((child) => (
-                                <Link
-                                  key={child.public_id}
-                                  href={`/products?category=${child.slug}`}
-                                  className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 pl-6"
-                                >
-                                  {child.name}
-                                </Link>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <Link
-                          href={`/products?category=${category.slug}`}
-                          className="block px-4 py-2 text-sm text-black hover:bg-gray-100"
-                        >
-                          {category.name}
-                        </Link>
-                      )}
-                    </div>
-                  ))}
+                  {categories.map((category) => renderDesktopCategory(category, 0))}
                 </div>
               </div>
             </div>

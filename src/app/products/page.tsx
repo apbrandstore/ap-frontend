@@ -7,6 +7,7 @@ import { Product, productApi, categoryApi } from "@/lib/api";
 import type { StorefrontCategory } from "@/types/api";
 import { ProductCard } from "@/components/common/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/ProductCardSkeleton";
+import { buildCategorySlugPathMap } from "@/lib/category-slug-path";
 
 type FilterOption = { slug: string; name: string };
 
@@ -37,6 +38,7 @@ function ProductsPageContent() {
   );
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOption[]>([]);
+  const [slugToPath, setSlugToPath] = useState<Record<string, string[]>>({});
 
   const isCategoryView = Boolean(
     category && !search && !isBestSelling && !isNewDrops
@@ -61,7 +63,11 @@ function ProductsPageContent() {
           ...(ordering ? { ordering, sort: ordering } : {}),
         });
         if (!cancelled) {
-          setProducts(data?.results ?? []);
+          const list = (data?.results ?? []).map((p) => ({
+            ...p,
+            category_path_slugs: slugToPath[p.category_slug] ?? undefined,
+          }));
+          setProducts(list);
           setTotalCount(data?.count ?? 0);
         }
       } catch (err) {
@@ -77,12 +83,13 @@ function ProductsPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [category, search, isBestSelling, isNewDrops, page, ordering]);
+  }, [category, search, isBestSelling, isNewDrops, page, ordering, slugToPath]);
 
   useEffect(() => {
     if (!isCategoryView || !category) {
       setCategoryInfo(null);
       setFilterOptions([]);
+      setSlugToPath({});
       return;
     }
     let cancelled = false;
@@ -94,6 +101,7 @@ function ProductsPageContent() {
       try {
         const tree = await categoryApi.getTree();
         if (cancelled) return;
+        setSlugToPath(buildCategorySlugPathMap(tree, 5));
 
         const slug = category!;
         let categoryInfoRes: StorefrontCategory | null = null;

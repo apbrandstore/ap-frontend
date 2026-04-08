@@ -52,7 +52,7 @@ export function PlacementBanners({
             slot === "home_bottom" ? "object-bottom" : "object-top";
 
           const block = (
-            <div className="relative w-full min-h-[200px] aspect-[16/9] md:aspect-[21/9] lg:aspect-[3/1]">
+            <div className="relative w-full min-h-[120px] sm:min-h-[160px] aspect-[21/9] md:min-h-[200px] md:aspect-[21/9] lg:aspect-[3/1]">
               <Image
                 src={img}
                 alt={b.title || "Promotion"}

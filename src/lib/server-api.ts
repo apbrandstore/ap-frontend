@@ -6,6 +6,7 @@ import type {
   StorePublic,
   BannerPlacementSlot,
 } from "@/types/api";
+import { buildCategorySlugPathMap } from "@/lib/category-slug-path";
 import {
   storefrontAuthHeaders,
   storefrontV1Url,
@@ -128,6 +129,7 @@ export async function fetchCategoriesTree(): Promise<StorefrontCategory[]> {
 
 export async function fetchHomepageBundle(): Promise<HomepageDerived> {
   const cats = await fetchCategoriesTree();
+  const slugToPath = buildCategorySlugPathMap(cats, 5);
 
   const categorySections = await Promise.all(
     cats.map(async (category) => ({
@@ -137,7 +139,10 @@ export async function fetchHomepageBundle(): Promise<HomepageDerived> {
         slug: category.slug,
         description: category.description ?? "",
       },
-      products: await fetchAllProductsForCategorySlug(category.slug),
+      products: (await fetchAllProductsForCategorySlug(category.slug)).map((p) => ({
+        ...p,
+        category_path_slugs: slugToPath[p.category_slug] ?? undefined,
+      })),
     }))
   );
 

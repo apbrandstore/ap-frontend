@@ -39,6 +39,8 @@ export interface StorefrontProductListItem {
   category_public_id: string;
   category_slug: string;
   category_name: string;
+  /** Frontend-only: derived from `/categories/?tree=1` (ancestor slugs, root→leaf). */
+  category_path_slugs?: string[];
   slug: string;
   stock_status: StorefrontStockStatus;
   available_quantity: number;

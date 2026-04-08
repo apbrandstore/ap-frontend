@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Product, getImageUrl } from "@/lib/api";
+import { productHrefFromPath } from "@/lib/category-slug-path";
 
 interface ProductCardProps {
   product: Product;
@@ -27,10 +28,11 @@ export function ProductCard({ product }: ProductCardProps) {
     : null;
   const hasDiscount =
     original !== null && !Number.isNaN(original) && original > price;
+  const href = productHrefFromPath(product.category_path_slugs, product.slug);
 
   return (
     <div className="group card-product">
-      <Link href={`/products/${encodeURIComponent(product.slug)}`} className="block">
+      <Link href={href} className="block">
         <div className="relative aspect-[4/5] bg-gray-200 overflow-hidden">
           {getImageUrl(product.image_url) ? (
             <Image
@@ -60,7 +62,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <div className="p-2 md:p-3 flex flex-col flex-1">
         <Link
-          href={`/products/${encodeURIComponent(product.slug)}`}
+          href={href}
           className="block"
         >
           <div className="product-title-link">{product.name}</div>

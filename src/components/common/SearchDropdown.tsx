@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { Product, searchApi, getImageUrl } from '@/lib/api';
+import { Product, searchApi, getImageUrl, categoryApi } from '@/lib/api';
+import {
+  buildCategorySlugPathMap,
+  productHrefFromPath,
+} from "@/lib/category-slug-path";
 
 interface SearchDropdownProps {
   isMobile?: boolean;
@@ -108,11 +112,22 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
   }, [searchQuery, router, onClose]);
 
   // Handle clicking on a search result
-  const handleResultClick = useCallback((slug: string) => {
-    router.push(`/products/${encodeURIComponent(slug)}`);
-    setShowDropdown(false);
-    onClose?.();
-  }, [router, onClose]);
+  const handleResultClick = useCallback(
+    async (product: Product) => {
+      try {
+        const tree = await categoryApi.getTree();
+        const map = buildCategorySlugPathMap(tree, 5);
+        const href = productHrefFromPath(map[product.category_slug], product.slug);
+        router.push(href);
+      } catch {
+        router.push(`/products/${encodeURIComponent(product.slug)}`);
+      } finally {
+        setShowDropdown(false);
+        onClose?.();
+      }
+    },
+    [router, onClose]
+  );
 
   // Handle "View All Results" click
   const handleViewAllResults = useCallback(() => {
@@ -262,7 +277,7 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
                   onMouseDown={(e) => {
                     e.preventDefault(); // Prevent input blur
                   }}
-                  onClick={() => handleResultClick(product.slug)}
+                  onClick={() => void handleResultClick(product)}
                   className="search-row"
                 >
                   <div className="flex items-center gap-3">

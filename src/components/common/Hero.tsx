@@ -22,7 +22,7 @@ export function Hero({ initialHeroSrc }: { initialHeroSrc?: string }) {
 
   return (
     <section className="relative w-full bg-white overflow-hidden">
-      <div className="relative w-full min-h-[200px] aspect-[16/9] md:aspect-[21/9] lg:aspect-[3/1]">
+      <div className="relative w-full min-h-[120px] sm:min-h-[160px] aspect-[21/9] md:min-h-[200px] md:aspect-[21/9] lg:aspect-[3/1]">
         {heroSrc ? (
           <Image
             src={heroSrc}

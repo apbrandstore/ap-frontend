@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   productApi,
   storeApi,
@@ -19,10 +19,15 @@ import {
   variantLabel,
   type VariantSelections,
 } from "@/lib/variant-utils";
-import { ChevronLeft, ChevronRight, Heart, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import Image from "next/image";
 import { ProductCard } from "@/components/common/ProductCard";
-import { PlacementBanners } from "@/components/common/PlacementBanners";
 import type { StorefrontProductVariant } from "@/types/api";
 
 function ProductImageGallery({
@@ -94,9 +99,7 @@ function ProductImageGallery({
             priority
           />
 
-          {lowStock && (
-            <div className="badge-stock">SELLING FAST</div>
-          )}
+          {lowStock && <div className="badge-stock">SELLING FAST</div>}
 
           {imageUrls.length > 1 && (
             <>
@@ -175,16 +178,16 @@ function CollapsibleSection({
         )}
       </button>
       {isOpen && (
-        <div className="pb-4 text-sm text-gray-600 leading-relaxed">{children}</div>
+        <div className="pb-4 text-sm text-gray-600 leading-relaxed">
+          {children}
+        </div>
       )}
     </div>
   );
 }
 
-export default function ProductDetailPage() {
-  const params = useParams();
+export function ProductDetailClient({ identifier }: { identifier: string }) {
   const router = useRouter();
-  const identifier = decodeURIComponent((params.identifier as string) || "");
   const { addToCart } = useCart();
 
   const [product, setProduct] = useState<StorefrontProductDetail | null>(null);
@@ -280,7 +283,6 @@ export default function ProductDetailPage() {
     [product?.extra_data, extraFieldSchema]
   );
 
-  /** Prefer `variants` array — `variant_count` alone is not enough for UI. */
   const needsVariant = (product?.variants?.length ?? 0) > 0;
   const variantReady = !needsVariant || selectedVariant !== null;
 
@@ -303,8 +305,7 @@ export default function ProductDetailPage() {
   const stockStatus = selectedVariant
     ? selectedVariant.stock_status
     : product?.stock_status;
-  const isOut =
-    stockStatus === "out_of_stock" || availableQty <= 0;
+  const isOut = stockStatus === "out_of_stock" || availableQty <= 0;
   const isLow =
     !isOut &&
     (stockStatus === "low_stock" ||
@@ -317,9 +318,7 @@ export default function ProductDetailPage() {
 
   const handleOrder = () => {
     if (!product || isOut || !variantReady) return;
-    const q = new URLSearchParams({
-      product: product.slug,
-    });
+    const q = new URLSearchParams({ product: product.slug });
     if (selectedVariant) q.set("variant", selectedVariant.public_id);
     router.push(`/order?${q.toString()}`);
   };
@@ -461,7 +460,9 @@ export default function ProductDetailPage() {
                   );
                 })}
                 {!variantReady && (
-                  <p className="text-sm text-amber-700">Select all options to continue.</p>
+                  <p className="text-sm text-amber-700">
+                    Select all options to continue.
+                  </p>
                 )}
               </div>
             )}
@@ -541,7 +542,9 @@ export default function ProductDetailPage() {
 
         {related.length > 0 && (
           <div className="mt-16 lg:mt-24">
-            <h2 className="section-heading text-center mb-8">You Might Also Like</h2>
+            <h2 className="section-heading text-center mb-8">
+              You Might Also Like
+            </h2>
 
             <div className="overflow-x-auto pb-4 -mx-4 px-4 lg:hidden">
               <div className="flex gap-4 min-w-max">
@@ -570,3 +573,4 @@ export default function ProductDetailPage() {
     </div>
   );
 }
+

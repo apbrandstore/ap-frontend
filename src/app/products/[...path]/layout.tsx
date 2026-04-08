@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
-import {
-  storefrontAuthHeaders,
-  storefrontV1Url,
-} from "@/lib/storefront-config";
+import { storefrontAuthHeaders, storefrontV1Url } from "@/lib/storefront-config";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ identifier: string }>;
+  params: Promise<{ path: string[] }>;
 }): Promise<Metadata> {
-  const { identifier } = await params;
+  const { path } = await params;
+  const identifier = Array.isArray(path) && path.length > 0 ? path[path.length - 1] : "";
+
+  if (!identifier) return { title: "Product | AP Brand Store" };
+
   try {
     const res = await fetch(
       storefrontV1Url(`/products/${encodeURIComponent(identifier)}/`),
@@ -41,3 +42,4 @@ export default function ProductDetailLayout({
 }) {
   return <>{children}</>;
 }
+

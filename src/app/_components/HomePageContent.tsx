@@ -30,11 +30,16 @@ export function HomePageContent({ data, initialHeroUrl }: HomePageContentProps) 
       <Hero initialHeroSrc={initialHeroUrl ?? undefined} />
 
       {/* Category sections (dynamic from backend) */}
-      {categorySections.map(({ category, products }) => {
+      {categorySections.map(({ category, products }, idx) => {
         const desc = (category.description ?? "").trim();
         return (
-          <section key={category.public_id} className="container mx-auto px-4 py-16">
-            <div className="mb-12 text-center">
+          <section
+            key={category.public_id}
+            className={`container mx-auto px-4 ${
+              idx === 0 ? "pt-2 pb-12 md:py-16" : "py-16"
+            }`}
+          >
+            <div className="mb-5 md:mb-12 text-center">
               <h2 className="section-heading">{category.name}</h2>
               {desc ? <p className="section-subtitle">{desc}</p> : null}
             </div>
