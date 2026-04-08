@@ -22,9 +22,9 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
-  Heart,
   ChevronDown,
   ChevronUp,
+  Share2,
 } from "lucide-react";
 import Image from "next/image";
 import { ProductCard } from "@/components/common/ProductCard";
@@ -196,8 +196,35 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
   const [related, setRelated] = useState<StorefrontProductListItem[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [selections, setSelections] = useState<VariantSelections>({});
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [extraFieldSchema, setExtraFieldSchema] = useState<unknown[]>([]);
+
+  const handleShare = async () => {
+    const url =
+      typeof window !== "undefined" ? window.location.href : String(identifier);
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 1500);
+    } catch {
+      // Fallback for older browsers / clipboard permission issues
+      try {
+        const el = document.createElement("textarea");
+        el.value = url;
+        el.setAttribute("readonly", "");
+        el.style.position = "absolute";
+        el.style.left = "-9999px";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        setShareCopied(true);
+        window.setTimeout(() => setShareCopied(false), 1500);
+      } catch {
+        // If copy fails silently, at least don't crash UI
+      }
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -486,20 +513,15 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
               </button>
               <button
                 type="button"
-                onClick={() => setIsWishlisted(!isWishlisted)}
-                disabled
-                className={`w-14 flex items-center justify-center border transition-all ${
-                  isWishlisted
-                    ? "border-red-500 bg-red-50"
-                    : "border-gray-300 hover:border-gray-400"
-                } opacity-50 cursor-not-allowed`}
-                aria-label="Wishlist"
+                onClick={handleShare}
+                className="w-14 inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-900 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gray-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+                aria-label="Share"
               >
-                <Heart
-                  className={`w-5 h-5 transition-colors ${
-                    isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"
-                  }`}
-                />
+                {shareCopied ? (
+                  <span className="text-[11px] font-semibold">Copied</span>
+                ) : (
+                  <Share2 className="w-5 h-5" />
+                )}
               </button>
             </div>
 
