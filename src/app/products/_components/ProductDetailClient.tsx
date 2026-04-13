@@ -438,18 +438,18 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
             <div className="mb-4">
               {hasOffer ? (
                 <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="text-lg font-bold text-success">
+                  <span className="text-2xl md:text-3xl font-bold text-success">
                     Now ৳{displayPrice.toFixed(0)}
                   </span>
-                  <span className="text-sm text-gray-500 line-through">
+                  <span className="text-lg text-gray-500 line-through">
                     Was ৳{displayOriginal!.toFixed(0)}
                   </span>
-                  <span className="text-sm font-medium text-success">
+                  <span className="text-lg font-medium text-success">
                     (-{Math.round((1 - displayPrice / displayOriginal!) * 100)}%)
                   </span>
                 </div>
               ) : (
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-2xl md:text-3xl font-bold text-gray-900">
                   ৳{displayPrice.toFixed(0)}
                 </span>
               )}
@@ -494,35 +494,43 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="mb-6 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={handleOrder}
                 disabled={isOut || !variantReady}
-                className="btn-success"
+                className="btn-success w-full"
               >
                 {isOut ? "OUT OF STOCK" : "ORDER NOW"}
               </button>
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={isOut || !variantReady}
-                className="btn-outline-primary"
-              >
-                Add to cart
-              </button>
-              <button
-                type="button"
-                onClick={handleShare}
-                className="w-14 inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-900 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gray-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
-                aria-label="Share"
-              >
-                {shareCopied ? (
-                  <span className="text-[11px] font-semibold">Copied</span>
-                ) : (
-                  <Share2 className="w-5 h-5" />
-                )}
-              </button>
+              <div className="flex flex-row items-stretch gap-3">
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={isOut || !variantReady}
+                  className="btn-outline-primary flex min-h-[52px] min-w-0 flex-1 items-center justify-center text-center"
+                >
+                  Add to cart
+                </button>
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="inline-flex w-14 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-900 shadow-sm transition-all hover:-translate-y-0.5 hover:border-gray-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+                  aria-label={shareCopied ? "Link copied" : "Share product"}
+                >
+                  {shareCopied ? (
+                    <span className="px-0.5 text-center text-[10px] font-semibold leading-tight sm:text-[11px]">
+                      Copied
+                    </span>
+                  ) : (
+                    <Share2
+                      className="h-6 w-6 shrink-0"
+                      strokeWidth={2}
+                      aria-hidden
+                    />
+                  )}
+                </button>
+              </div>
             </div>
 
             {availableQty > 0 && availableQty <= 10 && !isOut && (

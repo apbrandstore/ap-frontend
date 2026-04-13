@@ -74,18 +74,18 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="space-y-0.5 mb-1.5 md:mb-2">
           {hasDiscount ? (
             <>
-              <div className="text-[10px] md:text-xs text-gray-500 line-through font-mono">
+              <div className="text-sm md:text-base text-gray-500 line-through font-mono">
                 {original!.toFixed(0)}৳
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-base md:text-lg font-bold font-mono text-success">
+                <span className="text-xl md:text-2xl font-bold font-mono text-success">
                   {price.toFixed(0)} ৳
                 </span>
               </div>
             </>
           ) : (
             <div className="flex items-baseline gap-2">
-              <span className="text-base md:text-lg font-bold font-mono text-black">
+              <span className="text-xl md:text-2xl font-bold font-mono text-black">
                 {price.toFixed(0)} ৳
               </span>
             </div>
