@@ -8,7 +8,6 @@ export interface OrderPDFData {
   customerName: string;
   phoneNumber: string;
   address: string;
-  district: string;
   paymentMethod: string;
   items: {
     name: string;
@@ -87,7 +86,6 @@ export function generateOrderPDF(data: OrderPDFData): void {
   const customerInfo = [
     ["Name:", data.customerName],
     ["Phone:", data.phoneNumber],
-    ["District:", data.district],
     ["Address:", ""],
   ];
 

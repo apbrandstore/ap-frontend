@@ -143,8 +143,8 @@ function OrderSummaryLineCard({
     Boolean(detail?.stock_tracking) && maxQty > 0 && line.quantity >= maxQty;
 
   return (
-    <div className="border border-gray-200 rounded p-4">
-      <div className="flex gap-4 items-start">
+    <div className="min-w-0 overflow-hidden rounded border border-gray-200 p-4">
+      <div className="flex min-w-0 w-full items-start gap-4">
         <div
           className="flex min-h-0 w-20 shrink-0 flex-col gap-2 overflow-y-auto overflow-x-hidden overscroll-contain rounded-sm [scrollbar-width:thin] [scrollbar-color:rgba(0,0,0,0.35)_transparent] touch-pan-y"
           style={
@@ -186,7 +186,7 @@ function OrderSummaryLineCard({
         <div ref={detailsRef} className="min-w-0 flex-1">
           <a
             href={`/products/${encodeURIComponent(line.snapshot.slug)}`}
-            className="block truncate font-semibold text-black hover:underline"
+            className="block break-words font-semibold text-black hover:underline"
           >
             {line.snapshot.name}
           </a>
@@ -218,7 +218,7 @@ function OrderSummaryLineCard({
                                 val.value_public_id
                               )
                             }
-                            className={`rounded border-2 px-3 py-1.5 text-sm transition-colors ${
+                            className={`max-w-full break-words rounded border-2 px-3 py-1.5 text-sm transition-colors ${
                               active
                                 ? "border-black bg-black text-white"
                                 : "border-gray-200 hover:border-gray-400"
@@ -314,10 +314,8 @@ function OrderPageContent() {
 
   const [formData, setFormData] = useState({
     customer_name: "",
-    district: "",
     address: "",
     phone_number: "",
-    email: "",
   });
 
   const checkoutInitSentRef = useRef(false);
@@ -721,9 +719,7 @@ function OrderPageContent() {
           : {}),
         shipping_name: formData.customer_name.trim(),
         phone: phone.trim(),
-        email: formData.email.trim() || undefined,
         shipping_address: formData.address.trim(),
-        district: formData.district.trim() || undefined,
         products: lines.map((l) => ({
           product_public_id: l.product_public_id,
           quantity: l.quantity,
@@ -789,7 +785,6 @@ function OrderPageContent() {
       customerName: formData.customer_name,
       phoneNumber: formData.phone_number,
       address: formData.address,
-      district: formData.district || "—",
       paymentMethod: "Cash on Delivery (COD)",
       items: receipt.items.map((it) => ({
         name: it.product_name,
@@ -830,9 +825,9 @@ function OrderPageContent() {
 
   if (success && receipt) {
     return (
-      <div className="bg-gray-50 min-h-screen">
-        <div className="container mx-auto px-4 py-8 md:py-16">
-          <div className="max-w-2xl mx-auto">
+      <div className="min-h-screen min-w-0 overflow-x-hidden bg-gray-50">
+        <div className="container mx-auto min-w-0 max-w-full px-4 py-8 md:py-16">
+          <div className="mx-auto w-full min-w-0 max-w-2xl">
             <div className="text-center mb-8">
               <div className="success-icon-wrap">
                 <CheckCircle className="w-12 h-12 text-green-600" />
@@ -884,10 +879,12 @@ function OrderPageContent() {
                     {receipt.items.map((it, index) => (
                       <div
                         key={`${it.product_name}-${index}`}
-                        className="flex justify-between text-sm bg-gray-50 rounded-lg p-3"
+                        className="flex min-w-0 justify-between gap-2 text-sm bg-gray-50 rounded-lg p-3"
                       >
-                        <div>
-                          <p className="font-medium">{it.product_name}</p>
+                        <div className="min-w-0">
+                          <p className="break-words font-medium">
+                            {it.product_name}
+                          </p>
                           {it.variant_details && (
                             <p className="text-gray-600 text-xs">
                               {it.variant_details}
@@ -947,25 +944,25 @@ function OrderPageContent() {
   if (lines.length === 0) return null;
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen min-w-0 overflow-x-hidden bg-gray-50">
+      <div className="container mx-auto min-w-0 max-w-full px-4 py-8">
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-black hover:underline mb-6"
+          className="mb-6 flex items-center gap-2 text-black hover:underline"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 shrink-0" />
           Back
         </button>
 
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-black mb-8">
+        <div className="mx-auto w-full min-w-0 max-w-4xl">
+          <h1 className="mb-8 break-words text-3xl font-bold text-black">
             অর্ডার করতে নিচের তথ্যগুলি দিন
           </h1>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-lg p-6 border border-gray-200">
-              <h2 className="text-xl font-semibold text-black mb-4">
+          <div className="grid min-w-0 gap-8 md:grid-cols-2">
+            <div className="min-w-0 rounded-lg border border-gray-200 bg-white p-6">
+              <h2 className="mb-4 break-words text-xl font-semibold text-black">
                 Order Summary
               </h2>
               <div className="space-y-4 mb-4">
@@ -1001,7 +998,7 @@ function OrderPageContent() {
                     setZoneId(e.target.value);
                     setShippingRateId("");
                   }}
-                  className="input-textarea w-full"
+                  className="input-textarea max-w-full min-w-0 w-full"
                   required
                 >
                   <option value="">নির্বাচন করুন</option>
@@ -1022,7 +1019,7 @@ function OrderPageContent() {
                     name="method"
                     value={shippingRateId}
                     onChange={(e) => setShippingRateId(e.target.value)}
-                    className="input-textarea w-full"
+                    className="input-textarea max-w-full min-w-0 w-full"
                   >
                     <option value="">ডিফল্ট / যেকোনো</option>
                     {options.map((o) => (
@@ -1053,8 +1050,8 @@ function OrderPageContent() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 border border-gray-200">
-              <h2 className="text-xl font-semibold text-black mb-6">
+            <div className="min-w-0 rounded-lg border border-gray-200 bg-white p-6">
+              <h2 className="mb-6 break-words text-xl font-semibold text-black">
                 গ্রাহকের তথ্য
               </h2>
 
@@ -1094,40 +1091,6 @@ function OrderPageContent() {
                     required
                     className="input-textarea"
                     placeholder="01XXXXXXXXX"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-black mb-2"
-                  >
-                    ইমেইল <span className="text-gray-500">(ঐচ্ছিক)</span>
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="input-textarea"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="district"
-                    className="block text-sm font-medium text-black mb-2"
-                  >
-                    জেলা / এলাকা <span className="text-gray-500">(ঐচ্ছিক)</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="district"
-                    name="district"
-                    value={formData.district}
-                    onChange={handleInputChange}
-                    className="input-textarea"
                   />
                 </div>
 
