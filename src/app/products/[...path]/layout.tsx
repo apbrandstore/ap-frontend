@@ -9,7 +9,7 @@ export async function generateMetadata({
   const { path } = await params;
   const identifier = Array.isArray(path) && path.length > 0 ? path[path.length - 1] : "";
 
-  if (!identifier) return { title: "Product | AP Brand Store" };
+  if (!identifier) return { title: "Product" };
 
   try {
     const res = await fetch(
@@ -19,7 +19,7 @@ export async function generateMetadata({
         headers: storefrontAuthHeaders(),
       }
     );
-    if (!res.ok) return { title: "Product | AP Brand Store" };
+    if (!res.ok) return { title: "Product" };
     const product = await res.json();
     const name = product?.name ?? "Product";
     const description =
@@ -27,11 +27,11 @@ export async function generateMetadata({
         ? product.description.slice(0, 160)
         : "View product details at AP Brand Store.";
     return {
-      title: `${name} | AP Brand Store`,
+      title: name,
       description,
     };
   } catch {
-    return { title: "Product | AP Brand Store" };
+    return { title: "Product" };
   }
 }
 

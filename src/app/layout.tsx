@@ -24,13 +24,11 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "AP Brand Store",
-  description: "Your premium shopping destination",
-  icons: {
-    icon: "/media/apbrandstore.jpg",
-    shortcut: "/media/apbrandstore.jpg",
-    apple: "/media/apbrandstore.jpg",
+  title: {
+    default: "AP Brand Store",
+    template: "%s | AP Brand Store",
   },
+  description: "Your premium shopping destination",
 };
 
 /** Layout must run per-request so store contact/footer data is not frozen at build time. */
