@@ -20,20 +20,22 @@ export function Hero({ initialHeroSrc }: { initialHeroSrc?: string }) {
     })().catch(() => {});
   }, []);
 
+  if (!heroSrc) {
+    return null;
+  }
+
   return (
     <section className="relative w-full bg-white overflow-hidden">
       <div className="relative w-full min-h-[120px] sm:min-h-[160px] aspect-[21/9] md:min-h-[200px] md:aspect-[21/9] lg:aspect-[3/1]">
-        {heroSrc ? (
-          <Image
-            src={heroSrc}
-            alt="Store hero"
-            fill
-            priority
-            sizes="100vw"
-            className="object-contain object-top"
-            unoptimized
-          />
-        ) : null}
+        <Image
+          src={heroSrc}
+          alt="Store hero"
+          fill
+          priority
+          sizes="100vw"
+          className="object-contain object-top"
+          unoptimized
+        />
       </div>
     </section>
   );

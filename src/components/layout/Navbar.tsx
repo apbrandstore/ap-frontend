@@ -398,8 +398,9 @@ export function Navbar() {
               className="max-w-2xl w-full pointer-events-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <SearchDropdown 
-                isMobile={false} 
+              <SearchDropdown
+                isMobile={false}
+                autoFocus
                 placeholder={placeholders[placeholderIndex]}
                 onClose={closeSearchModal}
               />

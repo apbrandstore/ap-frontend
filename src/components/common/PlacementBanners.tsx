@@ -42,11 +42,13 @@ export function PlacementBanners({
   if (banners.length === 0) return null;
 
   if (isHomeSlot) {
+    const withImages = banners.filter((b) => getImageUrl(b.image_url));
+    if (withImages.length === 0) return null;
+
     return (
       <section className={`relative w-full bg-white overflow-hidden ${className}`}>
-        {banners.map((b) => {
-          const img = getImageUrl(b.image_url);
-          if (!img) return null;
+        {withImages.map((b) => {
+          const img = getImageUrl(b.image_url)!;
 
           const objectPositionClass =
             slot === "home_bottom" ? "object-bottom" : "object-top";

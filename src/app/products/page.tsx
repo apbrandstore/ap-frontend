@@ -124,7 +124,18 @@ function ProductsPageContent() {
           }
         }
 
-        if (categoryInfoRes) setCategoryInfo(categoryInfoRes);
+        try {
+          const detail = await categoryApi.getBySlug(slug);
+          if (!cancelled) {
+            setCategoryInfo(
+              categoryInfoRes
+                ? { ...categoryInfoRes, ...detail }
+                : detail
+            );
+          }
+        } catch {
+          if (!cancelled && categoryInfoRes) setCategoryInfo(categoryInfoRes);
+        }
 
         if (children.length > 1 && parentSlugForAll) {
           const options: FilterOption[] = [
@@ -175,11 +186,13 @@ function ProductsPageContent() {
     return category || "Products";
   };
 
-  const getCategoryDescription = (): string => {
+  const getCategoryDescription = (): string | null => {
     if (isNewDrops) return "Newly Droped Prodcuts Just For You!";
     if (isBestSelling) return "Discover Our Most Popular Items";
     if (!category) return "Explore Our Complete Collection of Premium Apparel";
-    return `Discover our premium ${categoryInfo?.name ?? category} collection`;
+    const desc = categoryInfo?.description?.trim();
+    if (desc) return desc;
+    return null;
   };
 
   return (
@@ -193,9 +206,19 @@ function ProductsPageContent() {
               getCategoryTitle()
             )}
           </h1>
-          {!search && (
-            <p className="text-lg text-gray-700">{getCategoryDescription()}</p>
-          )}
+          {!search &&
+            (categoryLoading && isCategoryView ? (
+              <p className="text-lg text-gray-700">
+                <span className="inline-block h-5 md:h-6 bg-gray-100 rounded w-72 md:w-96 mx-auto animate-pulse" />
+              </p>
+            ) : (
+              (() => {
+                const sub = getCategoryDescription();
+                return sub ? (
+                  <p className="text-lg text-gray-700">{sub}</p>
+                ) : null;
+              })()
+            ))}
           {!loading && totalCount > 0 && (
             <p className="text-sm text-gray-500 mt-2">
               Showing {(page - 1) * PAGE_SIZE + 1}–

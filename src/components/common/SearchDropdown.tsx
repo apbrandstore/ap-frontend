@@ -15,9 +15,16 @@ interface SearchDropdownProps {
   isMobile?: boolean;
   placeholder?: string;
   onClose?: () => void;
+  /** Focus the input on mount (e.g. when the search overlay opens). */
+  autoFocus?: boolean;
 }
 
-export function SearchDropdown({ isMobile = false, placeholder = "Search products...", onClose }: SearchDropdownProps) {
+export function SearchDropdown({
+  isMobile = false,
+  placeholder = "Search products...",
+  onClose,
+  autoFocus = false,
+}: SearchDropdownProps) {
   const router = useRouter();
   
   // Store scroll position to prevent unwanted scrolling
@@ -156,18 +163,19 @@ export function SearchDropdown({ isMobile = false, placeholder = "Search product
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Focus input on mobile when component mounts
+  // Focus input when overlay opens (mobile layout or explicit autoFocus)
   useEffect(() => {
-    if (isMobile && searchInputRef.current) {
-      // Prevent scroll when focusing
-      const currentScrollPosition = window.pageYOffset;
-      searchInputRef.current.focus({ preventScroll: true });
-      // Restore scroll position if it changed
+    if (!(isMobile || autoFocus) || !searchInputRef.current) return;
+    const currentScrollPosition = window.pageYOffset;
+    // Defer so the input is in the layout after the modal paints (fixes focus in overlay)
+    const id = requestAnimationFrame(() => {
+      searchInputRef.current?.focus({ preventScroll: true });
       if (window.pageYOffset !== currentScrollPosition) {
         window.scrollTo(0, currentScrollPosition);
       }
-    }
-  }, [isMobile]);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isMobile, autoFocus]);
 
   // Clean up timer on unmount
   useEffect(() => {
