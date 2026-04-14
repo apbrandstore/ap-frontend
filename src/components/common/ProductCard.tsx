@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { Product, getImageUrl } from "@/lib/api";
 import { productHrefFromPath } from "@/lib/category-slug-path";
 
@@ -20,6 +21,33 @@ function isOutOfStock(product: Product): boolean {
   );
 }
 
+/** Frame matches image aspect so object-contain fills without letterboxing or side crop. */
+function ProductCardImage({ src, alt }: { src: string; alt: string }) {
+  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+
+  return (
+    <div
+      className="relative w-full overflow-hidden bg-gray-200"
+      style={{
+        aspectRatio: natural ? `${natural.w} / ${natural.h}` : "4 / 5",
+      }}
+    >
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className="object-contain object-center md:group-hover:scale-105 transition-transform duration-300"
+        unoptimized
+        onLoadingComplete={(img) => {
+          if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+            setNatural({ w: img.naturalWidth, h: img.naturalHeight });
+          }
+        }}
+      />
+    </div>
+  );
+}
+
 export function ProductCard({ product }: ProductCardProps) {
   const out = isOutOfStock(product);
   const price = parseFloat(product.price);
@@ -33,17 +61,14 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="group card-product">
       <Link href={href} className="block">
-        <div className="relative aspect-[4/5] bg-gray-200 overflow-hidden">
+        <div className="relative">
           {getImageUrl(product.image_url) ? (
-            <Image
+            <ProductCardImage
               src={getImageUrl(product.image_url)!}
               alt={product.name}
-              fill
-              className="object-cover md:group-hover:scale-110 transition-transform duration-300"
-              unoptimized
             />
           ) : (
-            <div className="img-placeholder">
+            <div className="flex aspect-[4/5] w-full items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400">
               <span className="text-gray-500 text-xs md:text-sm">No Image</span>
             </div>
           )}

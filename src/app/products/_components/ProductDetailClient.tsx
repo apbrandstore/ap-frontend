@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   productApi,
@@ -14,12 +14,12 @@ import { galleryImageUrlsForProduct } from "@/lib/product-gallery-urls";
 import { useCart } from "@/contexts/CartContext";
 import {
   buildMatrixFromVariants,
-  defaultSelectionsForProduct,
   findVariantForSelections,
   variantLabel,
   type VariantSelections,
 } from "@/lib/variant-utils";
 import {
+  AlertCircle,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -40,10 +40,18 @@ function ProductImageGallery({
   lowStock: boolean;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [mainNatural, setMainNatural] = useState<{
+    w: number;
+    h: number;
+  } | null>(null);
 
   useEffect(() => {
     setActiveIndex(0);
   }, [imageUrls.join("|")]);
+
+  useEffect(() => {
+    setMainNatural(null);
+  }, [activeIndex, imageUrls.join("|")]);
 
   if (imageUrls.length === 0) {
     return (
@@ -89,14 +97,27 @@ function ProductImageGallery({
       )}
 
       <div className="flex-1 relative">
-        <div className="relative w-full aspect-[3/4] bg-gray-50 overflow-hidden">
+        <div
+          className="relative w-full overflow-hidden bg-gray-50"
+          style={{
+            aspectRatio: mainNatural
+              ? `${mainNatural.w} / ${mainNatural.h}`
+              : "3 / 4",
+          }}
+        >
           <Image
+            key={mainSrc}
             src={mainSrc}
             alt={productName}
             fill
-            className="object-cover"
+            className="object-contain object-center"
             unoptimized
             priority
+            onLoadingComplete={(img) => {
+              if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                setMainNatural({ w: img.naturalWidth, h: img.naturalHeight });
+              }
+            }}
           />
 
           {lowStock && <div className="badge-stock">SELLING FAST</div>}
@@ -196,7 +217,18 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
   const [related, setRelated] = useState<StorefrontProductListItem[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [selections, setSelections] = useState<VariantSelections>({});
+  const [selectionError, setSelectionError] = useState<string | null>(null);
+  const selectionErrorRef = useRef<HTMLDivElement>(null);
   const [shareCopied, setShareCopied] = useState(false);
+
+  useEffect(() => {
+    if (!selectionError) return;
+    const el = selectionErrorRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [selectionError]);
   const [extraFieldSchema, setExtraFieldSchema] = useState<unknown[]>([]);
 
   const handleShare = async () => {
@@ -252,7 +284,8 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
         setLoading(true);
         const data = await productApi.getByIdentifier(identifier);
         setProduct(data);
-        setSelections(defaultSelectionsForProduct(data));
+        setSelections({});
+        setSelectionError(null);
       } catch (err) {
         setError("Product not found");
         console.error(err);
@@ -267,6 +300,8 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
     () => (product ? buildMatrixFromVariants(product) : {}),
     [product]
   );
+
+  const matrixKeys = useMemo(() => Object.keys(matrix).sort(), [matrix]);
 
   const selectedVariant: StorefrontProductVariant | null = useMemo(() => {
     if (!product) return null;
@@ -340,18 +375,32 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
       (availableQty > 0 && availableQty <= 5));
 
   const setSelection = (attrSlug: string, valuePublicId: string) => {
+    setSelectionError(null);
     setSelections((prev) => ({ ...prev, [attrSlug]: valuePublicId }));
   };
 
+  const variantSelectionMessage =
+    matrixKeys.length > 1
+      ? "Please select all options first."
+      : "Please select a size first.";
+
   const handleOrder = () => {
-    if (!product || isOut || !variantReady) return;
+    if (!product || isOut) return;
+    if (needsVariant && !selectedVariant) {
+      setSelectionError(variantSelectionMessage);
+      return;
+    }
     const q = new URLSearchParams({ product: product.slug });
     if (selectedVariant) q.set("variant", selectedVariant.public_id);
     router.push(`/order?${q.toString()}`);
   };
 
   const handleAddToCart = async () => {
-    if (!product || isOut || !variantReady) return;
+    if (!product || isOut) return;
+    if (needsVariant && !selectedVariant) {
+      setSelectionError(variantSelectionMessage);
+      return;
+    }
     const snapPrice = selectedVariant?.price ?? product.price;
     const snapOriginal = product.original_price;
     await addToCart(
@@ -391,8 +440,6 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
       </div>
     );
   }
-
-  const matrixKeys = Object.keys(matrix).sort();
 
   return (
     <div className="bg-white min-h-screen">
@@ -486,19 +533,36 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
                     </div>
                   );
                 })}
-                {!variantReady && (
-                  <p className="text-sm text-amber-700">
-                    Select all options to continue.
+                {needsVariant && !variantReady && (
+                  <p className="text-sm text-gray-600">
+                    Choose your options above before ordering.
                   </p>
                 )}
               </div>
             )}
 
             <div className="mb-6 flex flex-col gap-3">
+              {selectionError && (
+                <div
+                  ref={selectionErrorRef}
+                  role="alert"
+                  aria-live="assertive"
+                  className="flex gap-3 rounded-lg border-2 border-amber-500 bg-amber-50 px-4 py-3.5 shadow-md ring-2 ring-amber-200/80"
+                >
+                  <AlertCircle
+                    className="h-6 w-6 shrink-0 text-amber-600"
+                    strokeWidth={2.25}
+                    aria-hidden
+                  />
+                  <p className="text-base font-semibold leading-snug text-amber-950">
+                    {selectionError}
+                  </p>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={handleOrder}
-                disabled={isOut || !variantReady}
+                disabled={isOut}
                 className="btn-success w-full"
               >
                 {isOut ? "OUT OF STOCK" : "ORDER NOW"}
@@ -507,7 +571,7 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  disabled={isOut || !variantReady}
+                  disabled={isOut}
                   className="btn-outline-primary flex min-h-[52px] min-w-0 flex-1 items-center justify-center text-center"
                 >
                   Add to cart

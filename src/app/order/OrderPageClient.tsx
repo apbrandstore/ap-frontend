@@ -516,13 +516,14 @@ function OrderPageContent() {
       .then((o) => {
         if (!cancelled) {
           setOptions(o);
-          if (o.length === 1) {
-            setShippingRateId(o[0].rate_public_id);
-          } else if (o.length === 0) {
+          if (o.length === 0) {
             setShippingRateId("");
           } else {
+            // No shipping-method UI: use first matching rate, or default to first option.
             setShippingRateId((prev) =>
-              prev && o.some((x) => x.rate_public_id === prev) ? prev : ""
+              prev && o.some((x) => x.rate_public_id === prev)
+                ? prev
+                : o[0].rate_public_id
             );
           }
         }
@@ -689,7 +690,7 @@ function OrderPageContent() {
       return;
     }
     if (!zoneId) {
-      setError("অনুগ্রহ করে শিপিং জোন নির্বাচন করুন");
+      setError("অনুগ্রহ করে ডেলিভারি এরিয়া নির্বাচন করুন");
       return;
     }
     if (!formData.address.trim()) {
@@ -960,12 +961,15 @@ function OrderPageContent() {
             অর্ডার করতে নিচের তথ্যগুলি দিন
           </h1>
 
-          <div className="grid min-w-0 gap-8 md:grid-cols-2">
-            <div className="min-w-0 rounded-lg border border-gray-200 bg-white p-6">
-              <h2 className="mb-4 break-words text-xl font-semibold text-black">
+          <form
+            onSubmit={handleSubmit}
+            className="grid min-h-0 min-w-0 grid-cols-1 gap-8 md:grid-cols-2 md:items-stretch"
+          >
+            <div className="flex h-full min-h-0 min-w-0 flex-col rounded-lg border border-gray-200 bg-white p-6">
+              <h2 className="mb-4 shrink-0 break-words text-xl font-semibold text-black">
                 Order Summary
               </h2>
-              <div className="space-y-4 mb-4">
+              <div className="min-h-0 flex-1 space-y-4">
                 {lines.map((line, index) => {
                   const detail = productDetails[line.product_public_id];
                   const galleryUrls = detail
@@ -987,54 +991,7 @@ function OrderPageContent() {
                 })}
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-black mb-2">
-                  শিপিং জোন <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="zone"
-                  value={zoneId}
-                  onChange={(e) => {
-                    setZoneId(e.target.value);
-                    setShippingRateId("");
-                  }}
-                  className="input-textarea max-w-full min-w-0 w-full"
-                  required
-                >
-                  <option value="">নির্বাচন করুন</option>
-                  {zones.map((z) => (
-                    <option key={z.zone_public_id} value={z.zone_public_id}>
-                      {z.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {options.length > 0 && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-black mb-2">
-                    শিপিং মেথড
-                  </label>
-                  <select
-                    name="method"
-                    value={shippingRateId}
-                    onChange={(e) => setShippingRateId(e.target.value)}
-                    className="input-textarea max-w-full min-w-0 w-full"
-                  >
-                    <option value="">ডিফল্ট / যেকোনো</option>
-                    {options.map((o) => (
-                      <option
-                        key={o.rate_public_id}
-                        value={o.rate_public_id}
-                      >
-                        {o.method_name} — ৳{parseFloat(o.price).toFixed(0)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div className="border-t border-gray-200 pt-3 mt-3 space-y-1 text-sm">
+              <div className="mt-4 shrink-0 space-y-1 border-t border-gray-200 pt-3 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>পণ্যের মোট:</span>
                   <span>৳{displaySubtotal.toFixed(0)}.00</span>
@@ -1050,12 +1007,11 @@ function OrderPageContent() {
               </div>
             </div>
 
-            <div className="min-w-0 rounded-lg border border-gray-200 bg-white p-6">
-              <h2 className="mb-6 break-words text-xl font-semibold text-black">
+            <div className="flex h-full min-h-0 min-w-0 flex-col rounded-lg border border-gray-200 bg-white p-6">
+              <h2 className="mb-6 shrink-0 break-words text-xl font-semibold text-black">
                 গ্রাহকের তথ্য
               </h2>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="min-h-0 flex-1 space-y-4">
                 <div>
                   <label
                     htmlFor="customer_name"
@@ -1113,26 +1069,64 @@ function OrderPageContent() {
                   />
                 </div>
 
+                <fieldset className="min-w-0">
+                  <legend className="block text-sm font-medium text-black mb-2">
+                    ডেলিভারি এরিয়া <span className="text-red-500">*</span>
+                  </legend>
+                  {zones.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      কোনো ডেলিভারি এরিয়া উপলব্ধ নেই।
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {zones.map((z) => {
+                        const id = `delivery-area-${z.zone_public_id}`;
+                        return (
+                          <label
+                            key={z.zone_public_id}
+                            htmlFor={id}
+                            className="flex cursor-pointer items-start gap-3 rounded border border-gray-200 px-3 py-2.5 transition-colors has-[:checked]:border-black has-[:checked]:bg-gray-50"
+                          >
+                            <input
+                              id={id}
+                              type="radio"
+                              name="delivery_area"
+                              value={z.zone_public_id}
+                              checked={zoneId === z.zone_public_id}
+                              onChange={() => {
+                                setZoneId(z.zone_public_id);
+                                setShippingRateId("");
+                              }}
+                              className="mt-0.5 h-4 w-4 shrink-0 border-gray-300 text-black focus:ring-black"
+                            />
+                            <span className="text-sm text-black">{z.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </fieldset>
+
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded p-3 text-red-700 text-sm">
                     {error}
                   </div>
                 )}
+              </div>
 
-                <button
-                  type="submit"
-                  disabled={submitting || !zoneId}
-                  className={`w-full py-3 px-6 rounded border-2 border-black text-base font-medium transition-colors ${
-                    submitting || !zoneId
-                      ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
-                      : "bg-white text-black hover:bg-black hover:text-white"
-                  }`}
-                >
-                  {submitting ? "অর্ডার দেওয়া হচ্ছে..." : "অর্ডার করুন"}
-                </button>
-              </form>
+              <button
+                type="submit"
+                disabled={submitting || !zoneId}
+                className={`mt-6 w-full shrink-0 py-3 px-6 rounded border-2 text-base font-medium transition-colors ${
+                  submitting || !zoneId
+                    ? "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "border-black bg-black text-white hover:bg-gray-900"
+                }`}
+              >
+                {submitting ? "অর্ডার দেওয়া হচ্ছে..." : "অর্ডার করুন"}
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
