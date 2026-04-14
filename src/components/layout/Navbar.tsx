@@ -259,6 +259,7 @@ export function Navbar() {
               alt="AP Brand Store Logo"
               width={280}
               height={140}
+              priority
               className="h-24 w-auto"
             />
           </Link>
@@ -336,6 +337,7 @@ export function Navbar() {
               alt="AP Brand Store Logo"
               width={260}
               height={120}
+              priority
               className="h-40 w-auto"
             />
           </Link>

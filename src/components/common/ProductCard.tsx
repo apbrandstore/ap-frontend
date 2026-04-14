@@ -38,7 +38,8 @@ function ProductCardImage({ src, alt }: { src: string; alt: string }) {
         fill
         className="object-contain object-center md:group-hover:scale-105 transition-transform duration-300"
         unoptimized
-        onLoadingComplete={(img) => {
+        onLoad={(e) => {
+          const img = e.currentTarget;
           if (img.naturalWidth > 0 && img.naturalHeight > 0) {
             setNatural({ w: img.naturalWidth, h: img.naturalHeight });
           }

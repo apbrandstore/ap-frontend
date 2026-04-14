@@ -113,7 +113,8 @@ function ProductImageGallery({
             className="object-contain object-center"
             unoptimized
             priority
-            onLoadingComplete={(img) => {
+            onLoad={(e) => {
+              const img = e.currentTarget;
               if (img.naturalWidth > 0 && img.naturalHeight > 0) {
                 setMainNatural({ w: img.naturalWidth, h: img.naturalHeight });
               }
