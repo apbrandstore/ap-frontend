@@ -991,7 +991,7 @@ function OrderPageContent() {
                 })}
               </div>
 
-              <div className="mt-4 shrink-0 space-y-1 border-t border-gray-200 pt-3 text-sm">
+              <div className="mt-4 hidden shrink-0 space-y-1 border-t border-gray-200 pt-3 text-sm md:block">
                 <div className="flex justify-between text-gray-600">
                   <span>পণ্যের মোট:</span>
                   <span>৳{displaySubtotal.toFixed(0)}.00</span>
@@ -1106,6 +1106,21 @@ function OrderPageContent() {
                     </div>
                   )}
                 </fieldset>
+
+                <div className="space-y-1 border-t border-gray-200 pt-3 text-sm md:hidden">
+                  <div className="flex justify-between text-gray-600">
+                    <span>পণ্যের মোট:</span>
+                    <span>৳{displaySubtotal.toFixed(0)}.00</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>শিপিং:</span>
+                    <span>৳{displayShipping.toFixed(0)}.00</span>
+                  </div>
+                  <div className="order-summary-row">
+                    <span>মোট:</span>
+                    <span>৳{displayTotal.toFixed(0)}.00</span>
+                  </div>
+                </div>
 
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded p-3 text-red-700 text-sm">
