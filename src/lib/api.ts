@@ -26,6 +26,7 @@ import type {
   ShippingPreviewResponse,
   OrderCreatePayload,
   OrderReceipt,
+  InitiateCheckoutResponse,
 } from "@/types/api";
 
 export type {
@@ -47,6 +48,7 @@ export type {
   ShippingPreviewResponse,
   OrderCreatePayload,
   OrderReceipt,
+  InitiateCheckoutResponse,
   Product,
   Category,
   CategoryChild,
@@ -334,9 +336,22 @@ export const pricingApi = {
   },
 };
 
+function normalizeInitiateCheckoutResponse(raw: unknown): InitiateCheckoutResponse {
+  if (!raw || typeof raw !== "object") return { meta_event_id: null };
+  const o = raw as Record<string, unknown>;
+  const id = o.meta_event_id ?? o.metaEventId;
+  if (typeof id === "string") return { meta_event_id: id };
+  if (id == null) return { meta_event_id: null };
+  return { meta_event_id: String(id) };
+}
+
 export const orderApi = {
-  initiateCheckout: async (): Promise<void> => {
-    await api.post(v1RequestUrl("/orders/initiate-checkout/"), {});
+  initiateCheckout: async (): Promise<InitiateCheckoutResponse> => {
+    const response = await api.post<unknown>(
+      v1RequestUrl("/orders/initiate-checkout/"),
+      {}
+    );
+    return normalizeInitiateCheckoutResponse(response.data);
   },
 
   create: async (data: OrderCreatePayload): Promise<OrderReceipt> => {

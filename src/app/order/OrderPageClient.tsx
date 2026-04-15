@@ -1,11 +1,5 @@
 "use client";
 
-declare global {
-  interface Window {
-    fbq?: (...args: unknown[]) => void;
-  }
-}
-
 import {
   useState,
   useEffect,
@@ -20,6 +14,7 @@ import {
   productApi,
   getImageUrl,
   orderApi,
+  storeApi,
   shippingApi,
   pricingApi,
   type StorefrontProductDetail,
@@ -41,6 +36,7 @@ import { ArrowLeft, CheckCircle, Download, ShoppingBag } from "lucide-react";
 import { generateOrderPDF, type OrderPDFData } from "@/lib/generateOrderPDF";
 import { PlacementBanners } from "@/components/common/PlacementBanners";
 import { galleryImageUrlsForProduct } from "@/lib/product-gallery-urls";
+import { trackEvent } from "@/lib/pixel";
 import axios from "axios";
 
 interface CheckoutLine {
@@ -274,16 +270,6 @@ function OrderSummaryLineCard({
   );
 }
 
-function firePurchaseEvent(
-  orderRef: string,
-  totalPrice: number,
-  productPublicIds: string[]
-) {
-  void orderRef;
-  void totalPrice;
-  void productPublicIds;
-}
-
 function OrderPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -312,6 +298,8 @@ function OrderPageContent() {
     final_total: string;
   } | null>(null);
 
+  const [storeCurrency, setStoreCurrency] = useState("BDT");
+
   const [formData, setFormData] = useState({
     customer_name: "",
     address: "",
@@ -336,6 +324,19 @@ function OrderPageContent() {
         return active[0].zone_public_id;
       });
     });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    storeApi
+      .getPublic()
+      .then((s) => {
+        if (!cancelled && s.currency?.trim()) setStoreCurrency(s.currency.trim());
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -571,8 +572,46 @@ function OrderPageContent() {
     if (loading || lines.length === 0) return;
     if (checkoutInitSentRef.current) return;
     checkoutInitSentRef.current = true;
-    orderApi.initiateCheckout().catch(() => {});
-  }, [loading, lines.length]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await orderApi.initiateCheckout();
+        if (cancelled) return;
+        const metaId = res.meta_event_id?.trim();
+        if (!metaId) return;
+
+        const value = breakdown
+          ? parseFloat(breakdown.final_total)
+          : lines.reduce(
+              (s, l) => s + parseFloat(l.snapshot.price) * l.quantity,
+              0
+            );
+        const numItems = lines.reduce((s, l) => s + l.quantity, 0);
+        const contentIds = lines.map((l) => l.product_public_id);
+
+        trackEvent(
+          "InitiateCheckout",
+          {
+            value,
+            currency: storeCurrency,
+            content_ids: contentIds,
+            num_items: numItems,
+            contents: lines.map((l) => ({
+              id: l.product_public_id,
+              quantity: l.quantity,
+              item_price: parseFloat(l.snapshot.price),
+            })),
+          },
+          metaId
+        );
+      } catch {
+        // backend optional; checkout continues
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, lines, breakdown, storeCurrency]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -730,10 +769,21 @@ function OrderPageContent() {
         })),
       });
 
-      firePurchaseEvent(
-        rec.public_id,
-        parseFloat(rec.total),
-        lines.map((l) => l.product_public_id)
+      const purchaseEventId = `purchase_${rec.public_id}`;
+      trackEvent(
+        "Purchase",
+        {
+          value: parseFloat(rec.total),
+          currency: storeCurrency,
+          content_ids: lines.map((l) => l.product_public_id),
+          num_items: lines.reduce((s, l) => s + l.quantity, 0),
+          contents: lines.map((l) => ({
+            id: l.product_public_id,
+            quantity: l.quantity,
+            item_price: parseFloat(l.snapshot.price),
+          })),
+        },
+        purchaseEventId
       );
 
       if (fromCart) await clearCart();

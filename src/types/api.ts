@@ -259,6 +259,11 @@ export interface OrderReceiptItem {
   variant_details: string | null;
 }
 
+/** Response from POST /orders/initiate-checkout/ (Meta CAPI `event_id` alignment). */
+export interface InitiateCheckoutResponse {
+  meta_event_id: string | null;
+}
+
 export interface OrderReceipt {
   public_id: string;
   order_number: string;

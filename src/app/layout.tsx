@@ -7,6 +7,7 @@ import { fetchStorePublic } from "@/lib/server-api";
 import { CartProvider } from "@/contexts/CartContext";
 import { MobileNavigation } from "@/components/layout/MobileNavigation";
 import { LoadingScreen } from "@/components/common/LoadingScreen";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 
 const funnelSans = Funnel_Sans({
   variable: "--font-funnel-sans",
@@ -47,6 +48,7 @@ export default async function RootLayout({
         className={`${funnelSans.variable} ${spaceGrotesk.variable} antialiased`}
       >
         <CartProvider>
+          <MetaPixel />
           <LoadingScreen />
           <Navbar />
           <main className="min-h-screen">
