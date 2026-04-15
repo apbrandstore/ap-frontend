@@ -1,39 +1,35 @@
 "use client";
 
 import Script from "next/script";
-import { useRef } from "react";
 
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() ?? "";
 
-let globalInitDone = false;
-
-function runInitOnce(pixelId: string) {
-  if (globalInitDone) return;
-  if (typeof window === "undefined" || typeof window.fbq !== "function") return;
-  globalInitDone = true;
-  window.fbq("init", pixelId);
-  window.fbq("track", "PageView");
-}
-
 export function MetaPixel() {
-  const initRef = useRef(false);
-
   if (!PIXEL_ID) {
     return null;
   }
 
-  const handleLoad = () => {
-    if (initRef.current) return;
-    initRef.current = true;
-    runInitOnce(PIXEL_ID);
-  };
-
   return (
-    <Script
-      id="meta-pixel-fbevents"
-      src="https://connect.facebook.net/en_US/fbevents.js"
-      strategy="afterInteractive"
-      onLoad={handleLoad}
-    />
+    <>
+      <Script
+        id="meta-pixel-bootstrap"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${PIXEL_ID}');fbq('track','PageView');`,
+        }}
+      />
+      <noscript>
+        {/* Pixel helper & Events Manager fallback for no-JS environments */}
+        <img
+          height="1"
+          width="1"
+          style={{ display: "none" }}
+          alt=""
+          src={`https://www.facebook.com/tr?id=${encodeURIComponent(
+            PIXEL_ID
+          )}&ev=PageView&noscript=1`}
+        />
+      </noscript>
+    </>
   );
 }
