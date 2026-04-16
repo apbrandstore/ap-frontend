@@ -259,9 +259,9 @@ export interface OrderReceiptItem {
   variant_details: string | null;
 }
 
-/** Response from POST /orders/initiate-checkout/ (Meta CAPI `event_id` alignment). */
+/** Response from POST /orders/initiate-checkout/ */
 export interface InitiateCheckoutResponse {
-  meta_event_id: string | null;
+  status: string;
 }
 
 export interface OrderReceipt {

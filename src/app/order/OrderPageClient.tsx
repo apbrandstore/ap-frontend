@@ -36,7 +36,6 @@ import { ArrowLeft, CheckCircle, Download, ShoppingBag } from "lucide-react";
 import { generateOrderPDF, type OrderPDFData } from "@/lib/generateOrderPDF";
 import { PlacementBanners } from "@/components/common/PlacementBanners";
 import { galleryImageUrlsForProduct } from "@/lib/product-gallery-urls";
-import { trackEvent } from "@/lib/pixel";
 import axios from "axios";
 
 interface CheckoutLine {
@@ -575,35 +574,8 @@ function OrderPageContent() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await orderApi.initiateCheckout();
+        await orderApi.initiateCheckout();
         if (cancelled) return;
-        const metaId = res.meta_event_id?.trim();
-        if (!metaId) return;
-
-        const value = breakdown
-          ? parseFloat(breakdown.final_total)
-          : lines.reduce(
-              (s, l) => s + parseFloat(l.snapshot.price) * l.quantity,
-              0
-            );
-        const numItems = lines.reduce((s, l) => s + l.quantity, 0);
-        const contentIds = lines.map((l) => l.product_public_id);
-
-        trackEvent(
-          "InitiateCheckout",
-          {
-            value,
-            currency: storeCurrency,
-            content_ids: contentIds,
-            num_items: numItems,
-            contents: lines.map((l) => ({
-              id: l.product_public_id,
-              quantity: l.quantity,
-              item_price: parseFloat(l.snapshot.price),
-            })),
-          },
-          metaId
-        );
       } catch {
         // backend optional; checkout continues
       }
@@ -768,23 +740,6 @@ function OrderPageContent() {
             : {}),
         })),
       });
-
-      const purchaseEventId = `purchase_${rec.public_id}`;
-      trackEvent(
-        "Purchase",
-        {
-          value: parseFloat(rec.total),
-          currency: storeCurrency,
-          content_ids: lines.map((l) => l.product_public_id),
-          num_items: lines.reduce((s, l) => s + l.quantity, 0),
-          contents: lines.map((l) => ({
-            id: l.product_public_id,
-            quantity: l.quantity,
-            item_price: parseFloat(l.snapshot.price),
-          })),
-        },
-        purchaseEventId
-      );
 
       if (fromCart) await clearCart();
 

@@ -337,12 +337,11 @@ export const pricingApi = {
 };
 
 function normalizeInitiateCheckoutResponse(raw: unknown): InitiateCheckoutResponse {
-  if (!raw || typeof raw !== "object") return { meta_event_id: null };
+  if (!raw || typeof raw !== "object") return { status: "ok" };
   const o = raw as Record<string, unknown>;
-  const id = o.meta_event_id ?? o.metaEventId;
-  if (typeof id === "string") return { meta_event_id: id };
-  if (id == null) return { meta_event_id: null };
-  return { meta_event_id: String(id) };
+  const status = o.status;
+  if (typeof status === "string" && status.trim()) return { status: status.trim() };
+  return { status: "ok" };
 }
 
 export const orderApi = {

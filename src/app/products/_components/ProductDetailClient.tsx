@@ -11,7 +11,6 @@ import {
 } from "@/lib/api";
 import { entriesForExtraData } from "@/lib/extra-field-labels";
 import { galleryImageUrlsForProduct } from "@/lib/product-gallery-urls";
-import { trackEvent } from "@/lib/pixel";
 import { useCart } from "@/contexts/CartContext";
 import {
   buildMatrixFromVariants,
@@ -359,24 +358,6 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
     : product
       ? parseFloat(product.price)
       : 0;
-
-  useEffect(() => {
-    const p = product;
-    if (!p?.public_id) return;
-    const eventId = `view_${p.public_id}`;
-    trackEvent(
-      "ViewContent",
-      {
-        content_ids: [p.public_id],
-        content_type: "product",
-        value: parseFloat(p.price),
-        currency: storeCurrency,
-      },
-      eventId
-    );
-    // Intentionally once per product public_id; currency is snapshot at first fire (trackEvent dedupes by eventId).
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable ViewContent per product view
-  }, [product?.public_id]);
 
   const displayOriginal = product?.original_price
     ? parseFloat(product.original_price)
