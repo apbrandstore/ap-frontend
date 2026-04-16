@@ -18,6 +18,7 @@ import {
   variantLabel,
   type VariantSelections,
 } from "@/lib/variant-utils";
+import { trackerAddToCart, trackerViewContent } from "@/lib/tracker";
 import {
   AlertCircle,
   ChevronLeft,
@@ -359,6 +360,17 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
       ? parseFloat(product.price)
       : 0;
 
+  useEffect(() => {
+    const p = product;
+    if (!p?.public_id) return;
+    trackerViewContent({
+      id: p.public_id,
+      value: Number.isFinite(parseFloat(p.price)) ? parseFloat(p.price) : undefined,
+      currency: storeCurrency,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per product id
+  }, [product?.public_id]);
+
   const displayOriginal = product?.original_price
     ? parseFloat(product.original_price)
     : null;
@@ -407,6 +419,11 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
       setSelectionError(variantSelectionMessage);
       return;
     }
+    trackerAddToCart({
+      id: product.public_id,
+      value: Number.isFinite(displayPrice) ? displayPrice : undefined,
+      currency: storeCurrency,
+    });
     const snapPrice = selectedVariant?.price ?? product.price;
     const snapOriginal = product.original_price;
     await addToCart(

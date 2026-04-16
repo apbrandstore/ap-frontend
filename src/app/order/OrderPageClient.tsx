@@ -37,6 +37,7 @@ import { generateOrderPDF, type OrderPDFData } from "@/lib/generateOrderPDF";
 import { PlacementBanners } from "@/components/common/PlacementBanners";
 import { galleryImageUrlsForProduct } from "@/lib/product-gallery-urls";
 import axios from "axios";
+import { trackerInitiateCheckout, trackerPurchase } from "@/lib/tracker";
 
 interface CheckoutLine {
   product_public_id: string;
@@ -576,6 +577,13 @@ function OrderPageContent() {
       try {
         await orderApi.initiateCheckout();
         if (cancelled) return;
+        trackerInitiateCheckout({
+          items: lines.map((l) => ({ id: l.product_public_id, quantity: l.quantity })),
+          value: breakdown
+            ? parseFloat(breakdown.final_total)
+            : lines.reduce((s, l) => s + parseFloat(l.snapshot.price) * l.quantity, 0),
+          currency: storeCurrency,
+        });
       } catch {
         // backend optional; checkout continues
       }
@@ -739,6 +747,16 @@ function OrderPageContent() {
             ? { variant_public_id: l.variant_public_id }
             : {}),
         })),
+      });
+
+      trackerPurchase({
+        items: lines.map((l) => ({
+          id: l.product_public_id,
+          quantity: l.quantity,
+          item_price: parseFloat(l.snapshot.price),
+        })),
+        value: parseFloat(rec.total),
+        currency: storeCurrency,
       });
 
       if (fromCart) await clearCart();
