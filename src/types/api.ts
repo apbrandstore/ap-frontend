@@ -263,11 +263,6 @@ export interface OrderReceiptItem {
   variant_details: string | null;
 }
 
-/** Response from POST /orders/initiate-checkout/ */
-export interface InitiateCheckoutResponse {
-  status: string;
-}
-
 export interface OrderReceipt {
   public_id: string;
   order_number: string;

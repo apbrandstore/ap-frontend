@@ -26,7 +26,6 @@ import type {
   ShippingPreviewResponse,
   OrderCreatePayload,
   OrderReceipt,
-  InitiateCheckoutResponse,
 } from "@/types/api";
 
 export type {
@@ -48,7 +47,6 @@ export type {
   ShippingPreviewResponse,
   OrderCreatePayload,
   OrderReceipt,
-  InitiateCheckoutResponse,
   Product,
   Category,
   CategoryChild,
@@ -336,23 +334,7 @@ export const pricingApi = {
   },
 };
 
-function normalizeInitiateCheckoutResponse(raw: unknown): InitiateCheckoutResponse {
-  if (!raw || typeof raw !== "object") return { status: "ok" };
-  const o = raw as Record<string, unknown>;
-  const status = o.status;
-  if (typeof status === "string" && status.trim()) return { status: status.trim() };
-  return { status: "ok" };
-}
-
 export const orderApi = {
-  initiateCheckout: async (): Promise<InitiateCheckoutResponse> => {
-    const response = await api.post<unknown>(
-      v1RequestUrl("/orders/initiate-checkout/"),
-      {}
-    );
-    return normalizeInitiateCheckoutResponse(response.data);
-  },
-
   create: async (data: OrderCreatePayload): Promise<OrderReceipt> => {
     const response = await api.post<OrderReceipt>(v1RequestUrl("/orders/"), data);
     return response.data;

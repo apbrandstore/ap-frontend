@@ -572,25 +572,13 @@ function OrderPageContent() {
     if (loading || lines.length === 0) return;
     if (checkoutInitSentRef.current) return;
     checkoutInitSentRef.current = true;
-    let cancelled = false;
-    (async () => {
-      try {
-        await orderApi.initiateCheckout();
-        if (cancelled) return;
-        trackerInitiateCheckout({
-          items: lines.map((l) => ({ id: l.product_public_id, quantity: l.quantity })),
-          value: breakdown
-            ? parseFloat(breakdown.final_total)
-            : lines.reduce((s, l) => s + parseFloat(l.snapshot.price) * l.quantity, 0),
-          currency: storeCurrency,
-        });
-      } catch {
-        // backend optional; checkout continues
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    trackerInitiateCheckout({
+      items: lines.map((l) => ({ id: l.product_public_id, quantity: l.quantity })),
+      value: breakdown
+        ? parseFloat(breakdown.final_total)
+        : lines.reduce((s, l) => s + parseFloat(l.snapshot.price) * l.quantity, 0),
+      currency: storeCurrency,
+    });
   }, [loading, lines, breakdown, storeCurrency]);
 
   const handleInputChange = (
