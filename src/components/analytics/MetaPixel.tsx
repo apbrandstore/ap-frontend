@@ -4,10 +4,17 @@ import Script from "next/script";
 
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_PUBLISHABLE_KEY?.trim() ?? "";
 
-export function MetaPixel() {
+export function MetaPixel({
+  trackerScriptSrc,
+}: {
+  trackerScriptSrc?: string | null;
+}) {
   if (!PUBLISHABLE_KEY) {
     return null;
   }
+
+  const src = trackerScriptSrc?.trim() || "";
+  if (!src) return null;
 
   return (
     <>
@@ -20,7 +27,7 @@ export function MetaPixel() {
       />
       <Script
         id="paperbase-tracker"
-        src="https://storage.paperbase.me/static/tracker.js"
+        src={src}
         strategy="beforeInteractive"
       />
     </>

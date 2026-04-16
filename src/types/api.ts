@@ -9,6 +9,10 @@ export interface StorePublic {
   support_email: string;
   phone: string;
   address: string;
+  /** Version for tracker.js caching. Provided by backend. */
+  tracker_build_id?: string;
+  /** Fully qualified tracker.js URL (includes `?v=...`). Provided by backend. */
+  tracker_script_src?: string;
   extra_field_schema: unknown[];
   modules_enabled: Record<string, boolean>;
   theme_settings: { primary_color: string };

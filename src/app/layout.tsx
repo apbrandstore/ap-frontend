@@ -41,6 +41,15 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const storePublic = await fetchStorePublic();
+  const trackerScriptSrc =
+    storePublic?.tracker_script_src?.trim() ||
+    (storePublic?.tracker_build_id?.trim()
+      ? `https://storage.paperbase.me/static/tracker.js?v=${encodeURIComponent(
+          storePublic.tracker_build_id.trim()
+        )}`
+      : process.env.NODE_ENV !== "production"
+        ? "https://storage.paperbase.me/static/tracker.js"
+        : "");
 
   return (
     <html lang="en">
@@ -48,7 +57,7 @@ export default async function RootLayout({
         className={`${funnelSans.variable} ${spaceGrotesk.variable} antialiased`}
       >
         <CartProvider>
-          <MetaPixel />
+          <MetaPixel trackerScriptSrc={trackerScriptSrc} />
           <LoadingScreen />
           <Navbar />
           <main className="min-h-screen">
