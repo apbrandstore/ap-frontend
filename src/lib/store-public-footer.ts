@@ -57,3 +57,80 @@ export function socialLabel(key: string): string {
   };
   return map[k] ?? key.charAt(0).toUpperCase() + key.slice(1);
 }
+
+function socialLinkValue(
+  socialLinks: Record<string, string> | undefined,
+  key: string
+): string {
+  if (!socialLinks || typeof socialLinks !== "object") return "";
+  const want = key.toLowerCase();
+  for (const [k, v] of Object.entries(socialLinks)) {
+    if (k.toLowerCase() === want) return String(v ?? "").trim();
+  }
+  return "";
+}
+
+function digitsForWhatsApp(s: string): string {
+  const d = s.replace(/\D/g, "");
+  if (d.startsWith("00")) return d.slice(2);
+  return d;
+}
+
+function waDisplayLabel(
+  phone: string,
+  href: string,
+  fallback: string
+): string {
+  const p = phone.trim();
+  if (p) return p;
+  const m = href.match(/wa\.me\/(\d+)/i);
+  if (m?.[1]) return m[1];
+  const d = digitsForWhatsApp(fallback);
+  return d.length >= 8 ? d : "WhatsApp";
+}
+
+/** `wa.me` URL + label from GET /store/public/ (whatsapp social link or `phone`). */
+export function storeWhatsappAction(
+  store: { phone: string; social_links: Record<string, string> } | null | undefined
+): { href: string; label: string } | null {
+  if (!store) return null;
+
+  const fromSocial = socialLinkValue(store.social_links, "whatsapp");
+  if (fromSocial) {
+    const lower = fromSocial.toLowerCase();
+    if (
+      lower.startsWith("http://") ||
+      lower.startsWith("https://") ||
+      lower.startsWith("whatsapp:")
+    ) {
+      const href = normalizeExternalUrl(fromSocial);
+      return {
+        href,
+        label: waDisplayLabel(store.phone ?? "", href, fromSocial),
+      };
+    }
+    const digits = digitsForWhatsApp(fromSocial);
+    if (digits.length >= 8) {
+      const href = `https://wa.me/${digits}`;
+      return {
+        href,
+        label: waDisplayLabel(store.phone ?? "", href, fromSocial),
+      };
+    }
+  }
+
+  const phone = store.phone?.trim() ?? "";
+  const digits = digitsForWhatsApp(phone);
+  if (digits.length < 8) return null;
+  const href = `https://wa.me/${digits}`;
+  return { href, label: waDisplayLabel(phone, href, phone) };
+}
+
+/** `tel:` href from `phone` on GET /store/public/ (digits required). */
+export function storeTelHref(
+  store: { phone: string } | null | undefined
+): string | null {
+  const p = store?.phone?.trim() ?? "";
+  if (!p || !/\d/.test(p)) return null;
+  return `tel:${p.replace(/\s/g, "")}`;
+}

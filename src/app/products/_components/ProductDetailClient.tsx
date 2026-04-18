@@ -29,7 +29,16 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { ProductCard } from "@/components/common/ProductCard";
+import { cn } from "@/lib/utils";
 import type { StorefrontProductVariant } from "@/types/api";
+
+function formatBdt(n: number): string {
+  return Number.isFinite(n) && !Number.isNaN(n) ? n.toFixed(0) : "—";
+}
+
+/** Main image frame: fixed height so layout does not shift when the asset aspect ratio changes. */
+const MAIN_IMAGE_FRAME_CLASS =
+  "relative h-[min(70dvh,640px)] w-full min-h-0 min-w-0 max-w-full overflow-hidden bg-gray-50 mx-auto md:h-[min(72dvh,680px)]";
 
 function ProductImageGallery({
   imageUrls,
@@ -41,22 +50,19 @@ function ProductImageGallery({
   lowStock: boolean;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [mainNatural, setMainNatural] = useState<{
-    w: number;
-    h: number;
-  } | null>(null);
 
   useEffect(() => {
     setActiveIndex(0);
   }, [imageUrls.join("|")]);
 
-  useEffect(() => {
-    setMainNatural(null);
-  }, [activeIndex, imageUrls.join("|")]);
-
   if (imageUrls.length === 0) {
     return (
-      <div className="w-full aspect-[3/4] bg-gray-100 flex items-center justify-center">
+      <div
+        className={cn(
+          MAIN_IMAGE_FRAME_CLASS,
+          "flex items-center justify-center bg-gray-100"
+        )}
+      >
         <span className="text-gray-400 text-lg">No Image</span>
       </div>
     );
@@ -73,7 +79,7 @@ function ProductImageGallery({
   const mainSrc = getImageUrl(imageUrls[activeIndex])!;
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 w-full min-w-0 max-w-full">
       {imageUrls.length > 1 && (
         <div className="hidden md:flex flex-col gap-2 w-16 flex-shrink-0">
           {imageUrls.map((url, index) => (
@@ -81,84 +87,15 @@ function ProductImageGallery({
               key={index}
               type="button"
               onClick={() => setActiveIndex(index)}
-              className={`relative aspect-[3/4] overflow-hidden transition-all ${
-                activeIndex === index ? "ring-2 ring-black" : "hover:opacity-75"
-              }`}
+              className={cn(
+                "relative w-16 flex-shrink-0 aspect-[3/4] transition-all",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2",
+                activeIndex === index
+                  ? "ring-2 ring-black ring-offset-1 ring-offset-white"
+                  : "hover:opacity-75"
+              )}
             >
-              <Image
-                src={getImageUrl(url)!}
-                alt={`View ${index + 1}`}
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="flex-1 relative">
-        <div
-          className="relative w-full overflow-hidden bg-gray-50"
-          style={{
-            aspectRatio: mainNatural
-              ? `${mainNatural.w} / ${mainNatural.h}`
-              : "3 / 4",
-          }}
-        >
-          <Image
-            key={mainSrc}
-            src={mainSrc}
-            alt={productName}
-            fill
-            className="object-contain object-center"
-            unoptimized
-            priority
-            onLoad={(e) => {
-              const img = e.currentTarget;
-              if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-                setMainNatural({ w: img.naturalWidth, h: img.naturalHeight });
-              }
-            }}
-          />
-
-          {lowStock && <div className="badge-stock">SELLING FAST</div>}
-
-          {imageUrls.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={handlePrevious}
-                className="carousel-btn-prev"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="w-5 h-5 text-gray-700" />
-              </button>
-              <button
-                type="button"
-                onClick={handleNext}
-                className="carousel-btn-next"
-                aria-label="Next image"
-              >
-                <ChevronRight className="w-5 h-5 text-gray-700" />
-              </button>
-            </>
-          )}
-        </div>
-
-        {imageUrls.length > 1 && (
-          <div className="flex md:hidden gap-2 mt-3 justify-center px-4">
-            {imageUrls.map((url, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => setActiveIndex(index)}
-                className={`relative w-16 h-16 overflow-hidden flex-shrink-0 transition-all ${
-                  activeIndex === index
-                    ? "ring-2 ring-black ring-offset-1"
-                    : "opacity-70 hover:opacity-100"
-                }`}
-              >
+              <span className="relative z-0 block h-full w-full overflow-hidden">
                 <Image
                   src={getImageUrl(url)!}
                   alt={`View ${index + 1}`}
@@ -166,6 +103,80 @@ function ProductImageGallery({
                   className="object-cover"
                   unoptimized
                 />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="flex-1 relative min-w-0 w-full max-w-full">
+        <div className={MAIN_IMAGE_FRAME_CLASS}>
+          <Image
+            key={mainSrc}
+            src={mainSrc}
+            alt={productName}
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-contain object-center"
+            unoptimized
+            priority
+          />
+
+          {lowStock && <div className="badge-stock z-[1]">SELLING FAST</div>}
+
+          {imageUrls.length > 1 && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex h-full w-full min-h-0 min-w-0 max-h-full max-w-full items-center justify-between px-2.5 sm:px-3">
+              <button
+                type="button"
+                onClick={handlePrevious}
+                className="carousel-fab"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-5 w-5 text-gray-700" aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                className="carousel-fab"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-5 w-5 text-gray-700" aria-hidden />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {imageUrls.length > 1 && (
+          <div
+            className="flex md:hidden gap-2 mt-3 w-full min-w-0 -mx-1 px-1 py-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory"
+            role="tablist"
+            aria-label="Product images"
+          >
+            {imageUrls.map((url, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setActiveIndex(index)}
+                className={cn(
+                  "relative h-16 w-16 flex-shrink-0 snap-center rounded-sm transition-all",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2",
+                  activeIndex === index
+                    ? "ring-2 ring-black ring-offset-2 ring-offset-white"
+                    : "opacity-70 hover:opacity-100"
+                )}
+                aria-label={`View image ${index + 1}`}
+                aria-selected={activeIndex === index}
+                role="tab"
+              >
+                <span className="relative z-0 block h-full w-full overflow-hidden rounded-sm">
+                  <Image
+                    src={getImageUrl(url)!}
+                    alt={`View ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </span>
               </button>
             ))}
           </div>
@@ -201,7 +212,7 @@ function CollapsibleSection({
         )}
       </button>
       {isOpen && (
-        <div className="pb-4 text-sm text-gray-600 leading-relaxed">
+        <div className="min-w-0 max-w-full pb-4 text-sm text-gray-600 leading-relaxed [overflow-wrap:anywhere] break-words">
           {children}
         </div>
       )}
@@ -376,8 +387,13 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
     : null;
   const hasOffer =
     displayOriginal !== null &&
+    Number.isFinite(displayOriginal) &&
     !Number.isNaN(displayOriginal) &&
     displayOriginal > displayPrice;
+  const discountPct =
+    hasOffer && displayOriginal! > 0
+      ? Math.round((1 - displayPrice / displayOriginal!) * 100)
+      : 0;
 
   const availableQty = selectedVariant
     ? selectedVariant.available_quantity
@@ -465,9 +481,9 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
   }
 
   return (
-    <div className="bg-white min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <nav className="text-xs text-gray-500 mb-6 flex items-center gap-2 flex-wrap">
+    <div className="bg-white min-h-screen w-full min-w-0 overflow-x-clip">
+      <div className="max-w-7xl mx-auto px-4 py-6 w-full min-w-0 pb-24 md:pb-6">
+        <nav className="text-xs text-gray-500 mb-6 flex items-center gap-2 flex-wrap min-w-0">
           <button
             type="button"
             onClick={() => router.push("/")}
@@ -484,11 +500,13 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
             Products
           </button>
           <span>/</span>
-          <span className="text-gray-400 truncate max-w-[200px]">{product.name}</span>
+          <span className="text-gray-400 truncate min-w-0 max-w-full sm:max-w-[min(100%,12rem)]">
+            {product.name}
+          </span>
         </nav>
 
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-          <div>
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 w-full min-w-0">
+          <div className="min-w-0">
             <ProductImageGallery
               imageUrls={imageUrls}
               productName={product.name}
@@ -496,31 +514,31 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
             />
           </div>
 
-          <div className="lg:max-w-md">
-            <p className="text-sm text-gray-500 mb-1 uppercase tracking-wider">
+          <div className="w-full min-w-0 max-w-full lg:max-w-md">
+            <p className="text-sm text-gray-500 mb-1 uppercase tracking-wider break-words">
               {product.category_name || product.brand || "STORE"}
             </p>
 
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-4 leading-tight">
+            <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-4 leading-tight [overflow-wrap:anywhere] break-words">
               {product.name}
             </h1>
 
-            <div className="mb-4">
+            <div className="mb-4 min-w-0">
               {hasOffer ? (
-                <div className="flex items-baseline gap-2 flex-wrap">
+                <div className="flex items-baseline gap-2 flex-wrap min-w-0">
                   <span className="text-2xl md:text-3xl font-bold text-success">
-                    Now ৳{displayPrice.toFixed(0)}
+                    Now ৳{formatBdt(displayPrice)}
                   </span>
                   <span className="text-lg text-gray-500 line-through">
-                    Was ৳{displayOriginal!.toFixed(0)}
+                    Was ৳{formatBdt(displayOriginal!)}
                   </span>
                   <span className="text-lg font-medium text-success">
-                    (-{Math.round((1 - displayPrice / displayOriginal!) * 100)}%)
+                    (-{discountPct}%)
                   </span>
                 </div>
               ) : (
                 <span className="text-2xl md:text-3xl font-bold text-gray-900">
-                  ৳{displayPrice.toFixed(0)}
+                  ৳{formatBdt(displayPrice)}
                 </span>
               )}
             </div>
@@ -542,11 +560,12 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
                               key={v.value_public_id}
                               type="button"
                               onClick={() => setSelection(slug, v.value_public_id)}
-                              className={`px-3 py-1.5 text-sm border-2 rounded transition-colors ${
+                              className={cn(
+                                "max-w-full px-3 py-1.5 text-sm border-2 rounded transition-colors [overflow-wrap:anywhere] break-words text-left",
                                 active
                                   ? "border-black bg-black text-white"
                                   : "border-gray-200 hover:border-gray-400"
-                              }`}
+                              )}
                             >
                               {v.value}
                             </button>
@@ -628,7 +647,9 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
 
             <div className="border-b border-gray-200">
               <CollapsibleSection title="PRODUCT DETAILS" defaultOpen>
-                <p className="mb-3 whitespace-pre-wrap">{product.description}</p>
+                <p className="mb-3 min-w-0 max-w-full whitespace-pre-wrap [overflow-wrap:anywhere] break-words">
+                  {product.description}
+                </p>
               </CollapsibleSection>
 
               {extraFieldRows.length > 0 && (
@@ -636,8 +657,10 @@ export function ProductDetailClient({ identifier }: { identifier: string }) {
                   <dl className="space-y-2">
                     {extraFieldRows.map((row) => (
                       <div key={row.key}>
-                        <dt className="font-medium text-gray-800">{row.label}</dt>
-                        <dd className="text-gray-600 mt-0.5 whitespace-pre-wrap">
+                        <dt className="font-medium text-gray-800 [overflow-wrap:anywhere] break-words">
+                          {row.label}
+                        </dt>
+                        <dd className="text-gray-600 mt-0.5 min-w-0 max-w-full whitespace-pre-wrap [overflow-wrap:anywhere] break-words">
                           {row.value}
                         </dd>
                       </div>

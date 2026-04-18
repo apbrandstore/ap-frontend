@@ -1,14 +1,46 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Phone, MessageCircle, X, MessagesSquare } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
+import { Phone, X, MessagesSquare } from 'lucide-react';
+import { storeApi } from '@/lib/api';
+import type { StorePublic } from '@/types/api';
+import { storeWhatsappAction, storeTelHref } from '@/lib/store-public-footer';
+import { WhatsappBrandIcon } from '@/components/common/WhatsappBrandIcon';
+import { cn } from '@/lib/utils';
 
-const WHATSAPP_NUMBER = '8801862641734';
-const PHONE_NUMBER = '+8801862641734';
-
-export function MobileNavigation() {
+export function MobileNavigation({ storePublic }: { storePublic: StorePublic | null }) {
+  const pathname = usePathname();
+  const [publicStore, setPublicStore] = useState<StorePublic | null>(storePublic);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const contactRef = useRef<HTMLDivElement>(null);
+
+  const refreshStorePublic = useCallback(() => {
+    storeApi
+      .getPublic()
+      .then((d) => setPublicStore(d))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setPublicStore(storePublic);
+  }, [storePublic]);
+
+  useEffect(() => {
+    refreshStorePublic();
+  }, [refreshStorePublic, pathname]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refreshStorePublic();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [refreshStorePublic]);
+
+  const whatsapp = storeWhatsappAction(publicStore);
+  const telHref = storeTelHref(publicStore);
+  const hasContact = Boolean(whatsapp || telHref);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -23,45 +55,53 @@ export function MobileNavigation() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isContactOpen]);
 
+  if (!hasContact) {
+    return null;
+  }
+
   return (
     <>
-      {/* Contact Us Speed-Dial FAB - mobile only */}
+      {/* Contact Us speed-dial FAB — mobile only; numbers from GET /store/public/ */}
       <div
         ref={contactRef}
         className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 md:hidden"
       >
-        {/* Sub-buttons — visible when open */}
         {isContactOpen && (
           <>
-            {/* Call */}
-            <a
-              href={`tel:${PHONE_NUMBER}`}
-              className="flex items-center gap-2 bg-black text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-              aria-label="Call us"
-              onClick={() => setIsContactOpen(false)}
-            >
-              <Phone className="w-4 h-4 flex-shrink-0" />
-              Call
-            </a>
-            {/* WhatsApp */}
-            <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-[#25D366] text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg text-sm font-medium hover:bg-[#20bd5a] transition-colors"
-              aria-label="Chat on WhatsApp"
-              onClick={() => setIsContactOpen(false)}
-            >
-              <MessageCircle className="w-4 h-4 flex-shrink-0" />
-              WhatsApp
-            </a>
+            {telHref ? (
+              <a
+                href={telHref}
+                className="flex items-center gap-2 bg-black text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                aria-label="Call us"
+                onClick={() => setIsContactOpen(false)}
+              >
+                <Phone className="w-4 h-4 flex-shrink-0" />
+                Call
+              </a>
+            ) : null}
+            {whatsapp ? (
+              <a
+                href={whatsapp.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-whatsapp text-white pl-3 pr-4 py-2.5 rounded-full shadow-lg text-sm font-medium hover:bg-whatsapp-hover transition-colors"
+                aria-label="Chat on WhatsApp"
+                onClick={() => setIsContactOpen(false)}
+              >
+                <WhatsappBrandIcon className="h-4 w-4 flex-shrink-0" />
+                WhatsApp
+              </a>
+            ) : null}
           </>
         )}
 
-        {/* Main Contact Us toggle button */}
         <button
+          type="button"
           onClick={() => setIsContactOpen((prev) => !prev)}
-          className="w-14 h-14 rounded-full bg-black text-white shadow-lg flex items-center justify-center hover:bg-gray-800 transition-all"
+          className={cn(
+            'w-14 h-14 rounded-full bg-black text-white shadow-lg flex items-center justify-center hover:bg-gray-800 transition-all',
+            !isContactOpen && 'animate-fab-message-pulse'
+          )}
           aria-label={isContactOpen ? 'Close contact options' : 'Contact us'}
           aria-expanded={isContactOpen}
         >

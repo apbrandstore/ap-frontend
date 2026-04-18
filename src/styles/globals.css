@@ -160,6 +160,23 @@ input:focus {
   }
 }
 
+/* Contact FAB — expanding ring so the control stays visible */
+@keyframes fab-message-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(0, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+.animate-fab-message-pulse {
+  animation: fab-message-pulse 2.25s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* Design tokens: heading font */
 .font-heading {
   font-family: var(--font-space-grotesk), "Space Grotesk", sans-serif;
@@ -327,12 +344,13 @@ input:focus {
     @apply opacity-100;
   }
 
-  .carousel-btn-prev {
-    @apply absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-lg transition-all;
+  /* Product gallery: overlay row uses flex; no top/translate so controls stay on the frame */
+  .carousel-fab {
+    @apply pointer-events-auto flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-0 bg-white/95 text-inherit ring-1 ring-gray-200 shadow-lg hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400;
   }
 
-  .carousel-btn-next {
-    @apply absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-lg transition-all;
+  button.carousel-fab {
+    transition: color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
   }
 
   .loading-overlay {

@@ -1,23 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, X, ChevronRight, ChevronDown, ShoppingBag, User, Phone, Plus, Minus, Mail, Menu } from 'lucide-react';
-import { notificationApi, categoryApi, type StorefrontNotification, type Category } from '@/lib/api';
+import { Search, X, ChevronRight, ChevronDown, ShoppingBag, User, Plus, Minus, Menu } from 'lucide-react';
+import { notificationApi, categoryApi, storeApi, type StorefrontNotification, type Category } from '@/lib/api';
 import { SearchDropdown } from '@/components/common/SearchDropdown';
 import { useCart } from '@/contexts/CartContext';
+import type { StorePublic } from '@/types/api';
+import { storeWhatsappAction } from '@/lib/store-public-footer';
+import { WhatsappBrandIcon } from '@/components/common/WhatsappBrandIcon';
 
 const placeholders = [
   'SEARCH BY NAME',
   'SEARCH BY CATEGORY',
 ];
 
-export function Navbar() {
+export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const { itemCount } = useCart();
+  const [publicStore, setPublicStore] = useState<StorePublic | null>(storePublic);
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
@@ -27,6 +31,29 @@ export function Navbar() {
   const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({});
   const [categories, setCategories] = useState<Category[]>([]);
   
+  const refreshStorePublic = useCallback(() => {
+    storeApi
+      .getPublic()
+      .then((d) => setPublicStore(d))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setPublicStore(storePublic);
+  }, [storePublic]);
+
+  useEffect(() => {
+    refreshStorePublic();
+  }, [refreshStorePublic, pathname]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") refreshStorePublic();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [refreshStorePublic]);
+
   useEffect(() => {
     async function fetchNotification() {
       const activeNotification = await notificationApi.getFirstActive();
@@ -176,6 +203,8 @@ export function Navbar() {
     setIsHamburgerOpen(false);
   };
 
+  const whatsapp = storeWhatsappAction(publicStore);
+
   const handleTrackOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (orderId.trim()) {
@@ -195,6 +224,23 @@ export function Navbar() {
 
   return (
     <nav className="bg-white sticky top-0 z-50 border-b border-gray-200 overflow-visible">
+      {whatsapp ? (
+        <div className="w-full bg-[#25D366] text-white border-b border-black/10">
+          <a
+            href={whatsapp.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Open WhatsApp chat: ${whatsapp.label}`}
+            className="container mx-auto px-4 py-2 flex items-center justify-center gap-2 text-xs md:text-sm font-medium hover:bg-[#1fb855] transition-colors"
+          >
+            <WhatsappBrandIcon className="h-4 w-4 flex-shrink-0" />
+            <span className="text-center break-all sm:break-normal">
+              {whatsapp.label}
+            </span>
+          </a>
+        </div>
+      ) : null}
+
       {/* Top info bar - CTA notification (mobile + desktop) */}
       {notification && (
         <div className="bg-black text-white py-2 overflow-hidden relative w-full z-10 border-b border-black">

@@ -59,12 +59,12 @@ export default async function RootLayout({
         <CartProvider>
           <MetaPixel trackerScriptSrc={trackerScriptSrc} />
           <LoadingScreen />
-          <Navbar />
+          <Navbar storePublic={storePublic} />
           <main className="min-h-screen">
             {children}
           </main>
           <Footer storePublic={storePublic} />
-          <MobileNavigation />
+          <MobileNavigation storePublic={storePublic} />
         </CartProvider>
       </body>
     </html>
