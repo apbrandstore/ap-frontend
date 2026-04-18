@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-import { Phone, X, MessagesSquare } from 'lucide-react';
+import { Phone, X } from 'lucide-react';
 import { storeApi } from '@/lib/api';
 import type { StorePublic } from '@/types/api';
 import { storeWhatsappAction, storeTelHref } from '@/lib/store-public-footer';
@@ -64,7 +64,7 @@ export function MobileNavigation({ storePublic }: { storePublic: StorePublic | n
       {/* Contact Us speed-dial FAB — mobile only; numbers from GET /store/public/ */}
       <div
         ref={contactRef}
-        className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 md:hidden"
+        className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-3 md:hidden"
       >
         {isContactOpen && (
           <>
@@ -99,8 +99,10 @@ export function MobileNavigation({ storePublic }: { storePublic: StorePublic | n
           type="button"
           onClick={() => setIsContactOpen((prev) => !prev)}
           className={cn(
-            'w-14 h-14 rounded-full bg-black text-white shadow-lg flex items-center justify-center hover:bg-gray-800 transition-all',
-            !isContactOpen && 'animate-fab-message-pulse'
+            'w-14 h-14 rounded-full text-white shadow-lg flex items-center justify-center transition-all',
+            isContactOpen
+              ? 'bg-black hover:bg-gray-800'
+              : 'bg-whatsapp hover:bg-whatsapp-hover animate-fab-message-pulse',
           )}
           aria-label={isContactOpen ? 'Close contact options' : 'Contact us'}
           aria-expanded={isContactOpen}
@@ -108,7 +110,7 @@ export function MobileNavigation({ storePublic }: { storePublic: StorePublic | n
           {isContactOpen ? (
             <X className="w-5 h-5" />
           ) : (
-            <MessagesSquare className="w-5 h-5" />
+            <WhatsappBrandIcon className="h-5 w-5" />
           )}
         </button>
       </div>

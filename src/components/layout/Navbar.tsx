@@ -225,17 +225,19 @@ export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
   return (
     <nav className="bg-white sticky top-0 z-50 border-b border-gray-200 overflow-visible">
       {whatsapp ? (
-        <div className="w-full bg-[#25D366] text-white border-b border-black/10">
+        <div className="relative z-[60] w-full border-b border-black/10">
           <a
             href={whatsapp.href}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Open WhatsApp chat: ${whatsapp.label}`}
-            className="container mx-auto px-4 py-2 flex items-center justify-center gap-2 text-xs md:text-sm font-medium hover:bg-[#1fb855] transition-colors"
+            className="block w-full bg-[#25D366] text-white py-2 hover:bg-[#1fb855] transition-colors"
           >
-            <WhatsappBrandIcon className="h-4 w-4 flex-shrink-0" />
-            <span className="text-center break-all sm:break-normal">
-              {whatsapp.label}
+            <span className="container mx-auto px-4 flex items-center justify-center gap-2 text-xs md:text-sm font-medium">
+              <WhatsappBrandIcon className="h-4 w-4 flex-shrink-0" />
+              <span className="text-center break-all sm:break-normal">
+                {whatsapp.label}
+              </span>
             </span>
           </a>
         </div>

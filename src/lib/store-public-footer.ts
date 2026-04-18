@@ -70,10 +70,81 @@ function socialLinkValue(
   return "";
 }
 
-function digitsForWhatsApp(s: string): string {
-  const d = s.replace(/\D/g, "");
-  if (d.startsWith("00")) return d.slice(2);
+const BD_CC = "880";
+
+function rawDigits(s: string): string {
+  let d = s.replace(/\D/g, "");
+  while (d.startsWith("00") && d.length > 2) d = d.slice(2);
   return d;
+}
+
+/**
+ * Bangladesh store: `wa.me` / WhatsApp `phone` params must be E.164 without `+` (e.g. 8801…).
+ * Accepts local `01…` or national `1…` and prefixes 880; leaves numbers that already start with 880.
+ */
+function normalizeWhatsappDigitsBD(s: string): string {
+  let d = rawDigits(s);
+  if (!d) return "";
+  if (d.startsWith(BD_CC)) return d;
+  if (d.startsWith("0") && d.length > 1) d = d.slice(1);
+  if (!d) return "";
+  if (d.startsWith(BD_CC)) return d;
+  return `${BD_CC}${d}`;
+}
+
+function isAcceptableBDDigits(d: string): boolean {
+  if (d.length < 8) return false;
+  if (!d.startsWith(BD_CC) || d.length < BD_CC.length + 1) return false;
+  return true;
+}
+
+function extractDigitsFromWhatsappHref(href: string): string | null {
+  const wa = /wa\.me\/(\d+)/i.exec(href);
+  if (wa?.[1]) return wa[1];
+  const p = /[?&]phone=([^&\s#]+)/i.exec(href);
+  if (p?.[1]) {
+    const decoded = decodeURIComponent(p[1].replace(/\+/g, ""));
+    const digits = rawDigits(decoded);
+    if (digits.length) return digits;
+  }
+  return null;
+}
+
+/** Add/replace 880 in wa.me, api.whatsapp.com send, and whatsapp: send?phone= URLs. */
+function withBangladeshWhatsappInHref(href: string): string {
+  if (/^whatsapp:\/\//i.test(href)) {
+    return href.replace(/([?&])phone=([^&\s#]+)/gi, (match, pre, v) => {
+      const d = rawDigits(decodeURIComponent(String(v).replace(/\+/g, "")));
+      if (!d) return match;
+      return `${pre}phone=${encodeURIComponent(normalizeWhatsappDigitsBD(d))}`;
+    });
+  }
+  try {
+    const u = new URL(
+      href.startsWith("http://") || href.startsWith("https://")
+        ? href
+        : `https://${href.replace(/^\/\//, "https://")}`,
+    );
+    const host = u.hostname.toLowerCase();
+    if (host === "api.whatsapp.com" && (u.pathname === "/send" || u.pathname === "/message")) {
+      const ph = u.searchParams.get("phone");
+      if (ph) {
+        u.searchParams.set("phone", normalizeWhatsappDigitsBD(rawDigits(ph)));
+        return u.toString();
+      }
+    }
+    if (host === "wa.me" || host.endsWith(".wa.me")) {
+      const m = u.pathname.match(/^\/(\d+)/);
+      if (m?.[1]) {
+        const n = normalizeWhatsappDigitsBD(m[1]);
+        u.pathname = u.pathname.replace(/^\d+/, n);
+        return u.toString();
+      }
+    }
+  } catch {
+    // leave href unchanged
+  }
+  return href;
 }
 
 function waDisplayLabel(
@@ -82,11 +153,17 @@ function waDisplayLabel(
   fallback: string
 ): string {
   const p = phone.trim();
-  if (p) return p;
-  const m = href.match(/wa\.me\/(\d+)/i);
-  if (m?.[1]) return m[1];
-  const d = digitsForWhatsApp(fallback);
-  return d.length >= 8 ? d : "WhatsApp";
+  if (p) {
+    const n = normalizeWhatsappDigitsBD(p);
+    if (isAcceptableBDDigits(n)) return n;
+  }
+  const fromHref = extractDigitsFromWhatsappHref(href);
+  if (fromHref) {
+    const n = normalizeWhatsappDigitsBD(fromHref);
+    if (isAcceptableBDDigits(n)) return n;
+  }
+  const d = normalizeWhatsappDigitsBD(fallback);
+  return isAcceptableBDDigits(d) ? d : "WhatsApp";
 }
 
 /** `wa.me` URL + label from GET /store/public/ (whatsapp social link or `phone`). */
@@ -101,16 +178,19 @@ export function storeWhatsappAction(
     if (
       lower.startsWith("http://") ||
       lower.startsWith("https://") ||
-      lower.startsWith("whatsapp:")
+      lower.startsWith("whatsapp:") ||
+      lower.startsWith("//")
     ) {
-      const href = normalizeExternalUrl(fromSocial);
+      const href = withBangladeshWhatsappInHref(
+        normalizeExternalUrl(fromSocial),
+      );
       return {
         href,
         label: waDisplayLabel(store.phone ?? "", href, fromSocial),
       };
     }
-    const digits = digitsForWhatsApp(fromSocial);
-    if (digits.length >= 8) {
+    const digits = normalizeWhatsappDigitsBD(fromSocial);
+    if (isAcceptableBDDigits(digits)) {
       const href = `https://wa.me/${digits}`;
       return {
         href,
@@ -120,8 +200,8 @@ export function storeWhatsappAction(
   }
 
   const phone = store.phone?.trim() ?? "";
-  const digits = digitsForWhatsApp(phone);
-  if (digits.length < 8) return null;
+  const digits = normalizeWhatsappDigitsBD(phone);
+  if (!isAcceptableBDDigits(digits)) return null;
   const href = `https://wa.me/${digits}`;
   return { href, label: waDisplayLabel(phone, href, phone) };
 }
