@@ -24,10 +24,9 @@ export function MetaPixel({
         strategy="beforeInteractive"
         dangerouslySetInnerHTML={{
           __html: [
-            `window.__PAPERBASE_API_KEY__ = ${JSON.stringify(PUBLISHABLE_KEY)};`,
             `window.PAPERBASE_PUBLISHABLE_KEY = ${JSON.stringify(PUBLISHABLE_KEY)};`,
             ...(PIXEL_ID
-              ? [`window.__PAPERBASE_PIXEL_ID__ = ${JSON.stringify(PIXEL_ID)};`]
+              ? [`window.PAPERBASE_PIXEL_ID = ${JSON.stringify(PIXEL_ID)};`]
               : []),
           ].join("\n"),
         }}

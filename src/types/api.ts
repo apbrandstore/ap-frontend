@@ -13,6 +13,10 @@ export interface StorePublic {
   tracker_build_id?: string;
   /** Fully qualified tracker.js URL (includes `?v=...`). Provided by backend. */
   tracker_script_src?: string;
+  /** Where tracker.js POSTs events. Informational — do not call this directly. */
+  tracking_ingest_endpoint?: string;
+  /** Meta Pixel ID for this store. null when no active Facebook integration is configured. Read by tracker.js automatically. */
+  pixel_id: string | null;
   extra_field_schema: unknown[];
   modules_enabled: Record<string, boolean>;
   theme_settings: { primary_color: string };

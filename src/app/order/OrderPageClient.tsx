@@ -573,7 +573,11 @@ function OrderPageContent() {
     if (checkoutInitSentRef.current) return;
     checkoutInitSentRef.current = true;
     trackerInitiateCheckout({
-      items: lines.map((l) => ({ id: l.product_public_id, quantity: l.quantity })),
+      items: lines.map((l) => ({
+        id: l.product_public_id,
+        quantity: l.quantity,
+        item_price: parseFloat(l.snapshot.price),
+      })),
       value: breakdown
         ? parseFloat(breakdown.final_total)
         : lines.reduce((s, l) => s + parseFloat(l.snapshot.price) * l.quantity, 0),
@@ -738,6 +742,7 @@ function OrderPageContent() {
       });
 
       trackerPurchase({
+        order_id: rec.public_id,
         items: lines.map((l) => ({
           id: l.product_public_id,
           quantity: l.quantity,
@@ -745,6 +750,13 @@ function OrderPageContent() {
         })),
         value: parseFloat(rec.total),
         currency: storeCurrency,
+        customer: {
+          phone: formData.phone_number.trim() || undefined,
+          first_name: formData.customer_name.trim().split(" ")[0] || undefined,
+          last_name:
+            formData.customer_name.trim().split(" ").slice(1).join(" ") || undefined,
+          country: "BD",
+        },
       });
 
       if (fromCart) await clearCart();
