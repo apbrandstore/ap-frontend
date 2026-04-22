@@ -145,24 +145,28 @@ export function Footer({ storePublic }: { storePublic: StorePublic | null }) {
             <nav className="space-y-2 text-sm" aria-label="Customer">
               <Link
                 href="/account"
+                prefetch={false}
                 className="block text-black hover:text-red-600 transition-colors"
               >
                 Account
               </Link>
               <Link
                 href="/cart"
+                prefetch={false}
                 className="block text-black hover:text-red-600 transition-colors"
               >
                 Cart
               </Link>
               <Link
                 href="/wishlist"
+                prefetch={false}
                 className="block text-black hover:text-red-600 transition-colors"
               >
                 Wishlist
               </Link>
               <Link
                 href="/blog"
+                prefetch={false}
                 className="block text-black hover:text-red-600 transition-colors"
               >
                 Blog
@@ -177,12 +181,14 @@ export function Footer({ storePublic }: { storePublic: StorePublic | null }) {
             <nav className="space-y-2 text-sm" aria-label="Information">
               <Link
                 href="/about-us"
+                prefetch={false}
                 className="block text-black hover:text-red-600 transition-colors"
               >
                 About us
               </Link>
               <Link
                 href="/contact-us"
+                prefetch={false}
                 className="block text-black hover:text-red-600 transition-colors"
               >
                 Contact Us
@@ -199,6 +205,7 @@ export function Footer({ storePublic }: { storePublic: StorePublic | null }) {
               ) : (
                 <Link
                   href="/privacy-policy"
+                  prefetch={false}
                   className="block text-black hover:text-red-600 transition-colors"
                 >
                   Privacy Policy
@@ -218,6 +225,7 @@ export function Footer({ storePublic }: { storePublic: StorePublic | null }) {
               ) : (
                 <Link
                   href="/refund-policy"
+                  prefetch={false}
                   className="block text-black hover:text-red-600 transition-colors"
                 >
                   Return & Refund
@@ -225,6 +233,7 @@ export function Footer({ storePublic }: { storePublic: StorePublic | null }) {
               )}
               <Link
                 href="/cancellation-policy"
+                prefetch={false}
                 className="block text-black hover:text-red-600 transition-colors"
               >
                 Cancellation Policy

@@ -104,6 +104,7 @@ export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
         <div className="flex items-center justify-between py-3 text-sm" style={{ paddingLeft, paddingRight: 16 }}>
           <Link
             href={`/products?category=${category.slug}`}
+            prefetch={false}
             className={`flex-1 ${depth === 0 ? "font-medium" : ""} text-black/80 hover:text-black`}
             onClick={closeHamburger}
           >
@@ -148,6 +149,7 @@ export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
         <div className="dropdown-item" style={{ paddingLeft }}>
           <Link
             href={`/products?category=${category.slug}`}
+            prefetch={false}
             className={`flex-1 ${depth === 0 ? "text-black" : "text-gray-700"} hover:text-black`}
           >
             {category.name}
@@ -300,6 +302,7 @@ export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
           {/* Center: Logo - Bigger size with absolute positioning to allow overflow */}
           <Link 
             href="/" 
+            prefetch={false}
             className="center-absolute"
           >
             <Image
@@ -352,6 +355,7 @@ export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
             <div className="overflow-y-auto flex-1 py-2">
               <Link
                 href="/products"
+                prefetch={false}
                 className={`block px-4 py-3 text-sm font-medium hover:bg-gray-100 transition-colors ${pathname.startsWith('/products') ? 'text-black' : 'text-black/80'}`}
                 onClick={closeHamburger}
               >
@@ -378,6 +382,7 @@ export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
           {/* Center: Logo - Positioned absolutely to allow overflow */}
           <Link 
             href="/" 
+            prefetch={false}
             className="center-absolute"
           >
             <Image
@@ -395,7 +400,7 @@ export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
             <div className="relative p-2 opacity-30 cursor-not-allowed pointer-events-none">
               <User className="w-5 h-5 text-black" />
             </div>
-            <Link href="/cart" className="relative p-2 hover:bg-gray-100 rounded transition-colors" aria-label="Cart">
+            <Link prefetch={false} href="/cart" className="relative p-2 hover:bg-gray-100 rounded transition-colors" aria-label="Cart">
               <ShoppingBag className="w-5 h-5 text-black" />
               {itemCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 text-[10px] font-bold bg-black text-white rounded-full flex items-center justify-center">
@@ -411,7 +416,7 @@ export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
       <div className="hidden md:block bg-white relative z-30 overflow-visible pt-8">
         <div className="container mx-auto px-4 pb-4">
           <div className="flex items-center justify-center gap-8">
-            <Link href="/" className="text-sm font-medium text-black hover:underline">
+            <Link prefetch={false} href="/" className="text-sm font-medium text-black hover:underline">
               Home
             </Link>
             <div className="relative group z-[200]">
@@ -425,7 +430,7 @@ export function Navbar({ storePublic }: { storePublic: StorePublic | null }) {
                 </div>
               </div>
             </div>
-            <Link href="/customer-reviews" className="text-sm font-medium text-black hover:underline">
+            <Link prefetch={false} href="/customer-reviews" className="text-sm font-medium text-black hover:underline">
               Customer Reviews
             </Link>
           </div>
